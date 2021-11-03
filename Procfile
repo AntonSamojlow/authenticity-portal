@@ -1,1 +1,0 @@
-web: gunicorn portalsite.portalsite.wsgi --log-file -
