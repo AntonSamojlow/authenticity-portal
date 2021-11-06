@@ -1,5 +1,5 @@
 from django.db import models
-
+from django.urls import reverse
 # Create your models here.
 
 
@@ -12,7 +12,3 @@ class MeasurementData(models.Model):
 
 def __str__(self):
     return self.id
-
-
-def get_aboslute_url(self):
-    return reverse('measurement-data', aref=[str(self.id)])
