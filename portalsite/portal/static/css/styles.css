@@ -1,0 +1,17 @@
+.sidebar-nav {
+    margin-top: 20px;
+    padding: 0;
+    list-style: none;
+}
+
+p {
+    color: black;
+}
+
+h1 {
+    color: darkblue;
+}
+
+h3 {
+    color: darkslateblue;
+}

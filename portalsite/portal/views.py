@@ -1,4 +1,5 @@
-from django.shortcuts import HttpResponse
+from django.shortcuts import render
+
 
 def index(request):
-    return HttpResponse("You are at the portals index")
+    return render(request, 'index.html')
