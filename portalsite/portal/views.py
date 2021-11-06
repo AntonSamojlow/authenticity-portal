@@ -1,8 +1,9 @@
 from datetime import datetime
 from django.http.request import HttpRequest
 from django.shortcuts import render
+from django.contrib.auth.decorators import login_required
 
-
+@login_required
 def index(request: HttpRequest):
 
     date_time_format = "%d-%m-%Y, %H:%M:%S"

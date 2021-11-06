@@ -19,9 +19,12 @@ from django.urls.conf import include
 from django.views.generic import RedirectView
 urlpatterns = [
     path('admin/', admin.site.urls),
+
     # redirect root to portal app
     path('', RedirectView.as_view(url='portal/', permanent=True)),
     # let portal app handle its url substrings
     path('portal/', include('portal.urls')),
 
+    # dango site authentication urls
+    path('accounts/', include('django.contrib.auth.urls'))
 ]
