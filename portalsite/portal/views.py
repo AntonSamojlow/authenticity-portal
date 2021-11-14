@@ -17,3 +17,7 @@ def index(request: HttpRequest):
         'first_visit_time': first_visit_time,
     }
     return render(request, 'index.html', context=context)
+
+@login_required
+def measurements(request: HttpRequest):
+    return render(request, 'measurements.html')

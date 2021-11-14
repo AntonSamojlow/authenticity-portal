@@ -26,7 +26,7 @@
 			<nav class="nav col-sm-12 col-md-auto mb-2 justify-content-center mb-md-0">
 				<a href="{% url 'index' %}" class="nav-link px-2 link-secondary">Home</a>
 				<a href="#" class="nav-link px-2 link-dark disabled">Models</a>
-				<a href="#" class="nav-link px-2 link-dark disabled">Measurements</a>
+				<a href="{% url 'measurements' %}" class="nav-link px-2 link-dark">Measurements</a>
 				<a href="#" class="nav-link px-2 link-dark disabled">About</a>
 			</nav>
 			<div class="col-md-3 text-end">
@@ -45,6 +45,16 @@
 		</header>
 	</div>
 	<div class="container-fluid">
+		<div class="row">
+			<div class="col"></div>
+			<div class="col-sm-4 d-flex justify-content-center alert alert-warning">
+				<div class="d-flex flex-column" role="alert">
+					<h6>Work in progress - please try again later </h6>
+					<p>Welcome to authenticity portal, a website (currently being) developed by <em>Anton Samojlow</em>.</p>
+				</div>
+			</div>
+			<div class="col"></div>
+		</div>
 		<div class="row">
 			<div class="col"></div>
 			<div class="col-sm-12 d-flex justify-content-center">

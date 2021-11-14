@@ -1,0 +1,18 @@
+{% extends "base_generic.html" %}
+
+{% block content %}
+<div class="row">
+    <h4>File upload (new measurement data)</h4>
+    <div class="input-group mb-3">
+        <input type="file" class="form-control" id="measurementUpload" aria-label="Upload">
+        <button type="button" class="btn btn-outline-primary ">Upload</button>
+        <!-- <label class="input-group-text" for="measurementUpload">Upload</label> -->
+    </div>
+</div>
+<div class="row">
+    <div>
+        <h4>Existing data </h4>
+        <p>... table to be displayed ...</p>
+    </div>
+</div>
+{% endblock %}
