@@ -3,10 +3,19 @@
 {% block content %}
 <div class="row">
     <h4>File upload (new measurement data)</h4>
+    
     <div class="input-group mb-3">
-        <input type="file" class="form-control" id="measurementUpload" aria-label="Upload">
-        <button type="button" class="btn btn-outline-primary ">Upload</button>
-        <!-- <label class="input-group-text" for="measurementUpload">Upload</label> -->
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <table>
+                {{ upload_form.as_table }}
+            </table>
+            <!-- <input type="file" name="upload" accept=".txt, .csv, .tsv"> -->
+            <button class="btn btn-outline-primary" type="submit">Upload</button>
+        </form>
+    </div>
+    <div>
+        <p>Upload status: {{ uploaded_content }}</p>
     </div>
 </div>
 <div class="row">
