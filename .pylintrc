@@ -1,0 +1,15 @@
+[MASTER]
+load-plugins=pylint_django
+; django-settings-module=portalsite.settings
+
+[FORMAT]
+max-line-length=120
+
+[MESSAGES CONTROL]
+disable=django-not-configured,missing-module-docstring
+
+[DESIGN]
+max-parents=7
+
+[TYPECHECK]
+; generated-members=REQUEST,acl_users,aq_parent,"[a-zA-Z]+_set{1,2}",save,delete
