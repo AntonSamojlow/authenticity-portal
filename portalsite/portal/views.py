@@ -62,7 +62,7 @@ class MeasurementsView(TemplateView):
             test_json = CsvParser.to_json(request.FILES['file'])
 
             if not data_type.validate(test_json):
-                upload_status = f"FAILURE: uploaded data is not valid for data type  '{data_type.name}'"
+                upload_status = f"FAILURE: uploaded data is not valid for data type '{data_type.name}'"
             else:
                 measurement = Measurement()
                 measurement.json_data = test_json
@@ -74,7 +74,7 @@ class MeasurementsView(TemplateView):
 
                 Measurement.save(measurement)
 
-                upload_status = "SUCCES - saved content is " + test_json
+                upload_status = "SUCCES"
                 # return HttpResponseRedirect('/success/')
         else:
             upload_status = "FAILURE: Could not process the data"
