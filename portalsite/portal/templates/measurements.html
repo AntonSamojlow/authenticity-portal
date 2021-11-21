@@ -1,27 +1,25 @@
 {% extends "base_generic.html" %}
 
 {% block content %}
-<div class="row">
-    <h4>File upload (new measurement data)</h4>
-    
-    <div class="input-group mb-3">
-        <form method="post" enctype="multipart/form-data">
-            {% csrf_token %}
-            <table>
-                {{ upload_form.as_table }}
-            </table>
-            <!-- <input type="file" name="upload" accept=".txt, .csv, .tsv"> -->
-            <button class="btn btn-outline-primary" type="submit">Upload</button>
-        </form>
-    </div>
     <div>
-        <p>Upload status: {{ upload_status }}</p>
+        <h4>File upload (new measurement data)</h4>
+        
+        <div class="input-group mb-3">
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <table>
+                    {{ upload_form.as_table }}
+                </table>
+                <!-- <input type="file" name="upload" accept=".txt, .csv, .tsv"> -->
+                <button class="btn btn-outline-primary" type="submit">Upload</button>
+            </form>
+        </div>
+        <div>
+            <p>Upload status: {{ upload_status }}</p>
+        </div>
+        <div>
+            <h4>Existing data </h4>
+            <p>... table to be displayed ...</p>
+        </div>
     </div>
-</div>
-<div class="row">
-    <div>
-        <h4>Existing data </h4>
-        <p>... table to be displayed ...</p>
-    </div>
-</div>
 {% endblock %}
