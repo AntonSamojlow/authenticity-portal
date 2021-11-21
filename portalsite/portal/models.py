@@ -2,18 +2,38 @@ from django.db import models
 from django.urls import reverse
 from django.conf import settings
 
+from .dataimport.typevalidators import TypeValidator, NumericCsvValidator
 
 class MeasurementDataType(models.Model):
     """Measurement data type"""
 
-    name = models.CharField(unique=True, max_length=50)
+    class Validators(models.TextChoices):
+        NumericCsvValidator = 'NumCSV', 'NumericCsvValidator'
 
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        self.__validator = None
+    name = models.CharField(unique=True, max_length=50)
+    validator = models.CharField(
+            max_length=6,
+            choices = Validators.choices,
+            default = Validators.NumericCsvValidator,
+        )
     def __str__(self):
         return str(self.name)
 
     def get_absolute_url(self):
         """Returns the url to display the object."""
         return reverse('measurement-data-type', args=[str(self.id)])
+
+    def validate(self, json_data: str) -> bool:
+        return self.__get_type_validator().validate(json_data)
+
+    def __get_type_validator(self) -> TypeValidator:
+        match self.validator:
+            case self.Validators.NumericCsvValidator:
+                return NumericCsvValidator()
+        return None
 
 
 class Source(models.Model):
