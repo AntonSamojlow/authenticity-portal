@@ -28,7 +28,6 @@ class NumericCsvValidator(TypeValidator):
             headers  =  json_dict["headers"]
             rows = json_dict["rows"]
         except KeyError:
-            print(KeyError)
             return False
 
         if(object_type != "csv_content"):
@@ -39,8 +38,6 @@ class NumericCsvValidator(TypeValidator):
         # check headers have text and  not pure values
         for header in headers:
             if NumericCsvValidator.is_float(header):
-                print(f"not float '{header}'")
-
                 return False
 
         # check all rows have float content
