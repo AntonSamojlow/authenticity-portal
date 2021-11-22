@@ -3,7 +3,7 @@ from django.http.request import HttpRequest
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
-from django.views.generic import TemplateView
+from django.views.generic import TemplateView, DetailView
 from django.views.generic.list import BaseListView
 
 from portal.forms import MeasurementUploadForm
@@ -28,7 +28,6 @@ def index(request: HttpRequest):
 @method_decorator(login_required, name='get')
 @method_decorator(login_required, name='post')
 class MeasurementsView(TemplateView, BaseListView):
-
     template_name = 'measurements.html'
     form_class = MeasurementUploadForm
     initial = {'key': 'value'}
@@ -76,3 +75,10 @@ class MeasurementsView(TemplateView, BaseListView):
         context = BaseListView.get_context_data(self, **kwargs)
         context["upload_form"] = form
         return render(request, self.template_name, context)
+
+
+class MeasurementDetailView(DetailView):
+    model  = Measurement
+    template_name = 'measurement.html'
+
+

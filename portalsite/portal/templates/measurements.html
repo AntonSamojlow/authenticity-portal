@@ -26,7 +26,7 @@
                     <th scope="col">Source</th>
                     <th scope="col">Uploaded</th>
                     <th scope="col">By</th>
-                    <th scope="col">Notes</th>
+                    <th scope="col">Details</th>
                 </tr>
             </thead>
             <tbody>
@@ -38,7 +38,7 @@
                     <td>{{ measurement.source }}</td>
                     <td>{{ measurement.time_created }}</td>
                     <td>{{ measurement.user_created }}</td>
-                    <td>{{ measurement.notes }}</td>
+                    <td><a href="{{ measurement.get_absolute_url }}">Show</a></td>
                 </tr>
                 {% empty %}
                 <tr>
