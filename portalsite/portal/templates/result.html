@@ -1,0 +1,28 @@
+{% extends "base_generic.html" %}
+
+{% block content %}
+<div>
+    <div class="mb-5 mt-5">
+        <h3>Result: {{result}}</h3>
+        <h4>{{message}}</h4>
+        {% if not details_formatted is None %}
+        <dl class="row overflow-scroll">
+            <dt class="col-sm-3">Details</dt>
+            <dd class="col-sm-9">
+                <pre> {{ details_formatted }}</pre>
+            </dd>
+        </dl>
+        {% endif %}
+
+        {% if not link_address is None %}
+        <a href="{{ link_address }}">
+            {% if link_text is None %}
+            {{ link_address }}
+            {% else %}
+            {{ link_text }}
+            {% endif %}
+        </a>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
