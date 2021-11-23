@@ -2,6 +2,8 @@ from django.db import models
 from django.urls import reverse
 from django.conf import settings
 
+from uuid import uuid4
+import json
 from .dataimport.typevalidators import TypeValidator, NumericCsvValidator
 
 class MeasurementDataType(models.Model):
@@ -58,6 +60,10 @@ class Measurement(models.Model):
 
     source = models.ForeignKey(Source, on_delete=models.RESTRICT)
 
+    name = models.CharField(
+        unique=True, 
+        max_length=50, 
+        default=f"measurement-{uuid4()}")
     notes = models.TextField(
         help_text="description or notes for this measurement",
         null=True,
@@ -86,13 +92,18 @@ class Measurement(models.Model):
     class Meta:
         ordering = ['time_created']
 
-    def __str__(self):
+    def __str__(self) -> str:
         return str(self.id)
 
-    def get_absolute_url(self):
+    def get_absolute_url(self) -> str:
         """Returns the url to display the object."""
         return reverse('measurement', args=[str(self.id)])
 
+    def get_json_data_pretty_printed(self) -> str:
+        return json.dumps(
+            json.loads(self.json_data), 
+            indent=4, 
+            sort_keys=True)
 
 class ModelType(models.Model):
     """Type of a prediction model"""

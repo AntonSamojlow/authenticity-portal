@@ -1,7 +1,8 @@
 from datetime import datetime
+from django.http import request
 from django.http.request import HttpRequest
 from django.shortcuts import render
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, permission_required
 from django.utils.decorators import method_decorator
 from django.views.generic import TemplateView, DetailView
 from django.views.generic.list import BaseListView
@@ -10,7 +11,7 @@ from portal.forms import MeasurementUploadForm
 from portal.models import MeasurementDataType, Measurement, Source
 from .dataimport.csvparser import CsvParser
 
-@login_required
+
 def index(request: HttpRequest):
 
     date_time_format = "%d-%m-%Y, %H:%M:%S"
@@ -25,40 +26,43 @@ def index(request: HttpRequest):
     }
     return render(request, 'index.html', context=context)
 
-@method_decorator(login_required, name='get')
-@method_decorator(login_required, name='post')
 class MeasurementsView(TemplateView, BaseListView):
     template_name = 'measurements.html'
     form_class = MeasurementUploadForm
     initial = {'key': 'value'}
-    model  = Measurement
-    
+    model = Measurement
+
     def __init__(self, **kwargs: any) -> None:
         super().__init__(**kwargs)
         # reload the choices
         self.type_choices = [(d.id, d.name) for d in list(MeasurementDataType.objects.all())]
         self.source_choices = [(d.id, d.name) for d in list(Source.objects.all())]
         self.object_list = Measurement.objects.all()
-        
-    def get_context_data(self, **kwargs):  
+
+    def get_context_data(self, **kwargs):
         form = self.form_class(self.type_choices, self.source_choices, initial={
-            'measurement_time': datetime.now(),
-            'data_type': self.type_choices[0] if len(self.type_choices)> 0 else None,
-            'source': self.source_choices[0] if len(self.source_choices)> 0 else None,
+            'measured': datetime.now(),
+            'data_type': self.type_choices[0] if len(self.type_choices) > 0 else None,
+            'source': self.source_choices[0] if len(self.source_choices) > 0 else None,
             'file': None
-            })
+        })
         context = BaseListView.get_context_data(self, **kwargs)
         context["upload_form"] = form
         return context
- 
+
     def post(self, request, *args, **kwargs):
         form = self.form_class(self.type_choices, self.source_choices, request.POST)
-        if form.is_valid() and 'file' in request.FILES.keys():
-            data_type = MeasurementDataType.objects.filter(id__exact = request.POST['data_type']).first()
-            source = Source.objects.filter(id__exact = request.POST['source']).first()
+        name_does_not_exist : bool =  Measurement.objects.filter(
+           name__exact=request.POST['measurement_name']).count() == 0
+        if (form.is_valid()
+                and 'file' in request.FILES.keys()
+                and name_does_not_exist):
+            data_type = MeasurementDataType.objects.filter(id__exact=request.POST['data_type']).first()
+            source = Source.objects.filter(id__exact=request.POST['source']).first()
             test_json = CsvParser.to_json(request.FILES['file'])
 
             measurement = Measurement()
+            measurement.name =  request.POST['measurement_name']
             measurement.json_data = test_json
             measurement.data_type = data_type
             measurement.time_measured = request.POST['measurement_time']
@@ -76,9 +80,6 @@ class MeasurementsView(TemplateView, BaseListView):
         context["upload_form"] = form
         return render(request, self.template_name, context)
 
-
 class MeasurementDetailView(DetailView):
-    model  = Measurement
+    model = Measurement
     template_name = 'measurement.html'
-
-

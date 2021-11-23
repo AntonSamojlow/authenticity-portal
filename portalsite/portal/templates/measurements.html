@@ -4,7 +4,8 @@
 <div>
     <div class="mb-5 mt-5">
         <h4>New measurement data</h4>
-        <div class="input-group w-75 p-3 d-flex justify-content-center m-3 border border-primary rounded">
+        {% if perms.portal.add_measurement %}
+        <div class="input-group p-3 d-flex justify-content-center m-3 border border-primary rounded">
             <form method="post" enctype="multipart/form-data">
                 {% csrf_token %}
                 <table>
@@ -14,31 +15,32 @@
                 <button class="btn btn-outline-primary" type="submit">Upload new data</button>
             </form>
         </div>
+        {% else %}
+        <p>You don't have permission to add measurements.</p>
+        {% endif %}
     </div>
+
     <div class="mb-5 mt-5">
         <h4>Existing measurements </h4>
+        {% if perms.portal.view_measurement %}
         <table class="table">
             <thead>
                 <tr>
-                    <th scope="col">Id</th>
+                    <th scope="col">Name</th>
                     <th scope="col">Data type</th>
                     <th scope="col">Measured</th>
                     <th scope="col">Source</th>
                     <th scope="col">Uploaded</th>
-                    <th scope="col">By</th>
-                    <th scope="col">Details</th>
                 </tr>
             </thead>
             <tbody>
                 {% for measurement in object_list %}
                 <tr>
-                    <th scope="row">{{ measurement.id }}</th>
+                    <td scope="row"><a href="{{ measurement.get_absolute_url }}">{{ measurement.name }}</a></td>
                     <td>{{ measurement.data_type }}</td>
                     <td>{{ measurement.time_measured }}</td>
                     <td>{{ measurement.source }}</td>
-                    <td>{{ measurement.time_created }}</td>
-                    <td>{{ measurement.user_created }}</td>
-                    <td><a href="{{ measurement.get_absolute_url }}">Show</a></td>
+                    <td>{{ measurement.time_created }} (by '{{ measurement.user_created }}')</td>
                 </tr>
                 {% empty %}
                 <tr>
@@ -47,6 +49,9 @@
                 {% endfor %}
             </tbody>
         </table>
+        {% else %}
+        <p>You don't have permission to view measurements.</p>
+        {% endif %}
     </div>
 </div>
 {% endblock %}

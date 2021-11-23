@@ -7,7 +7,8 @@ class MeasurementUploadForm(forms.Form):
         self.fields['data_type'].choices = type_choices
         self.fields['source'].choices = source_choices
 
-    measurement_time = forms.DateTimeField()
+    measured = forms.DateTimeField()
+    name = forms.CharField(max_length=50, required=True)
     data_type = forms.ChoiceField()
     source = forms.ChoiceField()
     file = forms.FileField(required=False)
