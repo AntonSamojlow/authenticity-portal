@@ -3,40 +3,22 @@ from django.urls import reverse
 from django.conf import settings
 
 from uuid import uuid4
-import json
-from .dataimport.typevalidators import TypeValidator, NumericCsvValidator
 
-class MeasurementDataType(models.Model):
-    """Measurement data type"""
+from .core.data_handler import DataHandler, NumericCsvHandler, ValidationResult
+from .core.model_type import ModelType, TestModelType
 
-    class Validators(models.TextChoices):
-        NumericCsvValidator = 'NumCSV', 'NumericCsvValidator'
+# initialize global types - note the keys are *limited in length* by virtue of the textfield they are used in
+CHOICE_KEY_MAX_LENGTH = 10
 
-    def __init__(self, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
-        self.__validator = None
-    name = models.CharField(unique=True, max_length=50)
-    validator = models.CharField(
-            max_length=6,
-            choices = Validators.choices,
-            default = Validators.NumericCsvValidator,
-        )
-    def __str__(self):
-        return str(self.name)
+DATAHANDLERS : dict[str, DataHandler] = {
+    'NumericCsv': NumericCsvHandler()
+}
+MODELTYPES : dict[str, ModelType] = {
+    'Test': TestModelType()
+}
 
-    def get_absolute_url(self):
-        """Returns the url to display the object."""
-        return reverse('measurement-data-type', args=[str(self.id)])
-
-    def validate(self, json_data: str) -> bool:
-        return self.__get_type_validator().validate(json_data)
-
-    def __get_type_validator(self) -> TypeValidator:
-        match self.validator:
-            case self.Validators.NumericCsvValidator:
-                return NumericCsvValidator()
-        return None
-
+MODELTYPE_CHOICES = [(key,  model_type.name) for key, model_type in MODELTYPES.items()]
+DATAHANDLER_CHOICES = [(key,  handler.name) for key, handler in DATAHANDLERS.items()]
 
 class Source(models.Model):
     """Source of a measurement"""
@@ -54,16 +36,12 @@ class Source(models.Model):
 class Measurement(models.Model):
     """Represents a measurement"""
 
-    json_data = models.TextField(
-        help_text='json object containing the measurement data')
-    data_type = models.ForeignKey(MeasurementDataType, on_delete=models.RESTRICT)
-
-    source = models.ForeignKey(Source, on_delete=models.RESTRICT)
-
+    # base attributes
     name = models.CharField(
-        unique=True, 
-        max_length=50, 
+        unique=True,
+        max_length=50,
         default=f"measurement-{uuid4()}")
+    source = models.ForeignKey(Source, on_delete=models.RESTRICT)
     notes = models.TextField(
         help_text="description or notes for this measurement",
         null=True,
@@ -71,7 +49,7 @@ class Measurement(models.Model):
     time_measured = models.DateTimeField(
         help_text="time the data was measured")
 
-    # change tracking
+    # change tracking attributes
     time_created = models.DateTimeField(auto_now_add=True, help_text="fist time this measurement was saved to database")
     time_changed = models.DateTimeField(auto_now=True, help_text="last time this measurement was changed")
     user_created = models.ForeignKey(
@@ -89,6 +67,13 @@ class Measurement(models.Model):
         related_name='+',
     )
 
+    # data interface
+    data = models.TextField(help_text='file data, serialized to string in a suitable way')
+    data_handler_id = models.CharField(max_length=CHOICE_KEY_MAX_LENGTH, choices=DATAHANDLER_CHOICES)
+
+    @property
+    def handler(self) -> DataHandler:
+        return DATAHANDLERS[self.data_handler_id]
     class Meta:
         ordering = ['time_created']
 
@@ -99,31 +84,31 @@ class Measurement(models.Model):
         """Returns the url to display the object."""
         return reverse('measurement', args=[str(self.id)])
 
-    def get_json_data_pretty_printed(self) -> str:
-        return json.dumps(
-            json.loads(self.json_data), 
-            indent=4, 
-            sort_keys=True)
+    # shortcuts via data handler
+    def as_displaytext(self) -> str:
+        return self.handler.as_displaytext(self.data)
 
-class ModelType(models.Model):
-    """Type of a prediction model"""
+    def as_array(self) -> str:
+        return self.handler.as_array(self.data)
 
-    name = models.CharField(unique=True, max_length=50)
+    def as_json(self) -> str:
+        return self.handler.as_json(self.data)
 
-    def __str__(self):
-        return str(self.name)
-
-    def get_absolute_url(self):
-        """Returns the url to display the object."""
-        return reverse('model-type', args=[str(self.id)])
+    def validate(self) -> list[ValidationResult]:
+        return self.handler.validate(self.data)
 
 
 class Model(models.Model):
     """Prediction model: combines with measurement to create a scoring"""
 
     name = models.CharField(unique=True, max_length=50)
-    type = models.ForeignKey(ModelType, on_delete=models.RESTRICT)
-    data_type = models.ForeignKey(MeasurementDataType, on_delete=models.RESTRICT)
+
+    # type interface
+    model_type = models.CharField(max_length=CHOICE_KEY_MAX_LENGTH, choices=MODELTYPE_CHOICES)
+
+    @property
+    def get_type(self) -> ModelType:
+        return MODELTYPES[self.model_type]
 
     def __str__(self):
         return str(self.name)
