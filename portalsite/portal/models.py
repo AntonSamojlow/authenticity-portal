@@ -30,7 +30,7 @@ class Source(models.Model):
 
     def get_absolute_url(self):
         """Returns the url to display the object."""
-        return reverse('source', args=[str(self.id)])
+        return reverse('source-detail', args=[str(self.id)])
 
 
 class Measurement(models.Model):
@@ -82,7 +82,7 @@ class Measurement(models.Model):
 
     def get_absolute_url(self) -> str:
         """Returns the url to display the object."""
-        return reverse('measurement', args=[str(self.id)])
+        return reverse('measurement-detail', args=[str(self.id)])
 
     # shortcuts via data handler
     def as_displaytext(self) -> str:
@@ -115,7 +115,7 @@ class Model(models.Model):
 
     def get_absolute_url(self):
         """Returns the url to display the object."""
-        return reverse('model', args=[str(self.id)])
+        return reverse('model-detail', args=[str(self.id)])
 
 
 class Scoring(models.Model):
@@ -130,4 +130,4 @@ class Scoring(models.Model):
 
     def get_absolute_url(self):
         """Returns the url to display the object."""
-        return reverse('scoring', args=[str(self.id)])
+        return reverse('scoring-detail', args=[str(self.id)])

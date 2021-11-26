@@ -7,11 +7,11 @@ from django.http.request import HttpRequest
 from django.http.response import HttpResponse
 from django.shortcuts import render
 from django.views.generic import TemplateView, DetailView
-from django.views.generic.list import BaseListView
+from django.views.generic.list import BaseListView, ListView
 
 # local
 from portal.forms import MeasurementUploadForm
-from portal.models import Measurement, Source, DATAHANDLER_CHOICES, DATAHANDLERS
+from portal.models import DATAHANDLER_CHOICES, DATAHANDLERS, Measurement, Model, Source
 
 
 def index(request: HttpRequest):
@@ -30,16 +30,16 @@ def index(request: HttpRequest):
 
 
 class MeasurementsView(TemplateView, BaseListView):
+    model = Measurement
     template_name = 'measurements.html'
     form_class = MeasurementUploadForm
     initial = {'key': 'value'}
-    model = Measurement
 
     def __init__(self, **kwargs: any) -> None:
         super().__init__(**kwargs)
         # reload the choices
         self.source_choices = [(d.id, d.name) for d in list(Source.objects.all())]
-        self.object_list = Measurement.objects.all()
+        self.object_list = self.model.objects.all()
 
     def get_context_data(self, **kwargs):
         form = self.form_class(DATAHANDLER_CHOICES, self.source_choices, initial={
@@ -93,8 +93,23 @@ class MeasurementsView(TemplateView, BaseListView):
 
 class MeasurementDetailView(DetailView):
     model = Measurement
-    template_name = 'measurement.html'
+    template_name = 'measurement-detail.html'
 
+class ModelsView(ListView):
+    model = Model
+    template_name = 'models.html'
+
+    def __init__(self, **kwargs: any) -> None:
+        super().__init__(**kwargs)
+        self.object_list = self.model.objects.all()
+
+    def get_context_data(self, **kwargs):
+        context = BaseListView.get_context_data(self, **kwargs)
+        return context
+
+class ModelDetailView(DetailView):
+    model = Model
+    template_name = 'model-detail.html'
 
 @dataclass
 class Result():
