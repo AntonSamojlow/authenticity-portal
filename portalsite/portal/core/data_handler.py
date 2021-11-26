@@ -1,26 +1,15 @@
 # standard
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
 from typing import TypeAlias
 from json import loads, dumps
 
 # 3rd party
 from numpy import ndarray, asarray
-from django.core.files import uploadedfile
 from django.core.files.uploadedfile import UploadedFile
 
 # local
-from .csvtools import CsvParser, CsvContent, NumericCsvValidator
-
-
-@dataclass
-class ValidationResult:
-    failed: bool
-    """Whether this validation step failed"""
-    name: str
-    """Descriptive name of the rule/step being validated"""
-    details: str
-    """Details, i.p. in case of a failure"""
+from .csvtools import CsvParser, NumericCsvValidator
+from .dataclasses import ValidationResult, CsvContent
 
 
 StorageType: TypeAlias = str
@@ -74,7 +63,7 @@ class NumericCsvHandler(DataHandler):
 
     def validate(self, data: StorageType) -> list[ValidationResult]:
         """Validate the data meets requirements"""
-        return NumericCsvValidator.validate(data)
+        return NumericCsvValidator.validate(CsvContent.from_json(data))
 
     def load_from_file(self, file: UploadedFile) -> StorageType:
         """Tries to read data from file (without validation)."""

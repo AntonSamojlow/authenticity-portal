@@ -12,7 +12,7 @@ from django.views.generic.list import BaseListView, ListView
 # local
 from portal.forms import MeasurementUploadForm, MeasurementScoreForm
 from portal.models import DATAHANDLER_CHOICES, DATAHANDLERS, Measurement, Model, Scoring, Source
-
+from .core.data_handler import ValidationResult
 
 def index(request: HttpRequest):
 
@@ -78,6 +78,13 @@ class MeasurementsView(TemplateView, BaseListView):
         measurement.user_created = request.user
         measurement.user_changed = request.user
         measurement.source = source
+
+        validation_results = measurement.validate()
+        if sum([0 if result.success else 1 for result in validation_results]) > 0:
+            return Result(False, "Validation failed",
+                details_formatted = "\n".join([f"{result.name}: {result.details}" for result in validation_results])
+            ).render_view()
+
 
         try:
             Measurement.save(measurement)
