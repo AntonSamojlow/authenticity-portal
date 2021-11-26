@@ -10,8 +10,8 @@ from django.views.generic import TemplateView, DetailView
 from django.views.generic.list import BaseListView, ListView
 
 # local
-from portal.forms import MeasurementUploadForm
-from portal.models import DATAHANDLER_CHOICES, DATAHANDLERS, Measurement, Model, Source
+from portal.forms import MeasurementUploadForm, MeasurementScoreForm
+from portal.models import DATAHANDLER_CHOICES, DATAHANDLERS, Measurement, Model, Scoring, Source
 
 
 def index(request: HttpRequest):
@@ -33,7 +33,6 @@ class MeasurementsView(TemplateView, BaseListView):
     model = Measurement
     template_name = 'measurements.html'
     form_class = MeasurementUploadForm
-    initial = {'key': 'value'}
 
     def __init__(self, **kwargs: any) -> None:
         super().__init__(**kwargs)
@@ -94,6 +93,36 @@ class MeasurementsView(TemplateView, BaseListView):
 class MeasurementDetailView(DetailView):
     model = Measurement
     template_name = 'measurement-detail.html'
+    form_class = MeasurementScoreForm
+
+    def __init__(self, **kwargs: any) -> None:
+        super().__init__(**kwargs)
+        # reload the choices
+        self.model_choices = [(d.id, d.name) for d in list(Model.objects.all())]
+
+    def get_context_data(self, **kwargs):
+        context = DetailView.get_context_data(self, **kwargs)
+        scores = Scoring.objects.filter(measurement__exact=self.get_object())
+        context["scores"] = scores
+        context["score_form"] = self.form_class(self.model_choices, initial={
+            'model': self.model_choices[0] if len(self.model_choices) > 0 else None,
+        })
+        return context
+
+    def post(self, request, *args, **kwargs):
+        model: Model = Model.objects.filter(id__exact=request.POST['model']).first()
+        scoring = model.score(self.get_object())
+        print(scoring.value)
+        print(scoring.measurement)
+        print(scoring.model)
+        try:
+            Scoring.save(scoring)
+        except Exception as exc:
+            # TODO: Replace this error by a generic one and write stacktrace only to log
+            return Result(False, "Internal problem", str(exc)).render_view()
+
+        return Result(True, f"Computed score: {scoring.value}").render_view()
+
 
 class ModelsView(ListView):
     model = Model
@@ -104,12 +133,14 @@ class ModelsView(ListView):
         self.object_list = self.model.objects.all()
 
     def get_context_data(self, **kwargs):
-        context = BaseListView.get_context_data(self, **kwargs)
+        context = ListView.get_context_data(self, **kwargs)
         return context
+
 
 class ModelDetailView(DetailView):
     model = Model
     template_name = 'model-detail.html'
+
 
 @dataclass
 class Result():

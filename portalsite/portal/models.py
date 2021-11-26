@@ -110,13 +110,20 @@ class Model(models.Model):
     def get_type(self) -> ModelType:
         return MODELTYPES[self.model_type]
 
+    def score(self, measurement : Measurement) -> 'Scoring':
+        """Returns a new scoring"""
+        scoring = Scoring()
+        scoring.value = self.get_type.score(self, measurement)
+        scoring.model = self
+        scoring.measurement = measurement 
+        return scoring
+
     def __str__(self):
         return str(self.name)
 
     def get_absolute_url(self):
         """Returns the url to display the object."""
         return reverse('model-detail', args=[str(self.id)])
-
 
 class Scoring(models.Model):
     """Result of applying a model to a measurement"""

@@ -1,4 +1,6 @@
 from django import forms
+from django.db.models.base import Model
+
 
 
 class MeasurementUploadForm(forms.Form):
@@ -12,3 +14,11 @@ class MeasurementUploadForm(forms.Form):
     data_handler = forms.ChoiceField()
     source = forms.ChoiceField()
     file = forms.FileField(required=False)
+
+
+class MeasurementScoreForm(forms.Form):
+    def __init__(self, model_choices: list, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        self.fields['model'].choices = model_choices
+
+    model = forms.ChoiceField()

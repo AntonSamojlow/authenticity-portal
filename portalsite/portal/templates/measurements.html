@@ -9,7 +9,7 @@
             <form method="post" enctype="multipart/form-data">
                 {% csrf_token %}
                 <table>
-                    {{ upload_form.as_table }}
+                    {{ upload_form }}
                 </table>
                 <!-- <input type="file" name="upload" accept=".txt, .csv, .tsv"> -->
                 <button class="btn btn-outline-primary" type="submit">Upload new data</button>
