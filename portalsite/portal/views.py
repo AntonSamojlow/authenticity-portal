@@ -19,7 +19,7 @@ def index(request: HttpRequest):
     date_time_format = "%d-%m-%Y, %H:%M:%S"
 
     first_visit_time = request.session.get('first_visit_time', None)
-    if (first_visit_time is None):
+    if first_visit_time is None:
         first_visit_time = datetime.now().strftime(date_time_format)
         request.session['first_visit_time'] = first_visit_time
     context = {
