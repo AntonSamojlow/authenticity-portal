@@ -1,31 +1,10 @@
 """Data parsers for uploaded measurements"""
 import csv
 import json
-from dataclasses import dataclass
 
 from django.core.files.uploadedfile import UploadedFile
-@dataclass
-class CsvContent:
-    """Structured content of a csv file"""
-    headers: list[str]
-    rows: list[list[str]]
+from .dataclasses import CsvContent, ValidationResult
 
-    def to_json(self, indent = None):
-        json_dict = {
-            "object_type" : 'CsvContent',
-            "headers" : self.headers,
-            "rows": self.rows
-        }
-        return json.dumps(json_dict, indent=indent)
-
-    @staticmethod
-    def from_json(json_data) -> 'CsvContent':
-        json_dict : dict = json.loads(json_data)
-        if 'object_type' not in json_dict.keys():
-            raise ValueError("Failed to serialize json string as CsvContent: missing 'object_type'")
-        if json_dict['object_type'] != 'CsvContent':
-            raise ValueError("Failed to serialize json string as CsvContent: 'object_type' does not match")
-        return CsvContent(json_dict["headers"], json_dict["rows"])
 
 class CsvParser:
     """Wrapper, combining django.core.files.uploadedfile with csv.DictReader"""
@@ -46,8 +25,8 @@ class CsvParser:
 
         return CsvContent(headers, rows)
 
-class NumericCsvValidator:
 
+class NumericCsvValidator:
     @classmethod
     def is_float(cls, text: str) -> bool:
         try:
@@ -57,32 +36,35 @@ class NumericCsvValidator:
             return False
 
     @classmethod
-    def validate(cls, json_data: str) -> bool:
-        json_dict : dict = json.loads(json_data)
-        # try and read the data
-        try:
-            object_type = str(json_dict["object_type"])
-            headers  =  json_dict["headers"]
-            rows = json_dict["rows"]
-        except KeyError:
-            return False
-
-        if(object_type != "csv_content"):
-            return False
-
-        column_count = len(headers)
+    def validate(cls, csv: CsvContent) -> list[ValidationResult]:
+        header_count = len(csv.headers)
+        results = []
 
         # check headers have text and  not pure values
-        for header in headers:
+        float_headers = []
+        for header in csv.headers:
             if NumericCsvValidator.is_float(header):
-                return False
+                float_headers.append(header)
+        if len(float_headers) > 0:
+            results.append(ValidationResult(False, "Numeric value in header",
+                details=f"Found {len(float_headers)} headers with numeric values: {','.join(float_headers)}"))
 
         # check all rows have float content
-        for row in rows:
-            if not isinstance(row, list) or len(row) != column_count:
-                return False
-            for entry in row:
-                if not (isinstance(entry, str) and NumericCsvValidator.is_float(entry)):
-                    return False
-
-        return True
+        for row_nr in range(len(csv.rows)):
+            row = csv.rows[row_nr]
+            if not isinstance(row, list):
+                results.append(ValidationResult(False, "Empty row",
+                    details=f"Row {row_nr} has no data"))
+            elif len(row) != header_count:
+                results.append(ValidationResult(False, "Nr of entries is incosistent",
+                    details=f"Row {row_nr} has {len(row)} entries, but file has {header_count} headers"))
+            else:
+                for column_nr in range(len(row)):
+                    entry = row[column_nr]
+                    if not isinstance(entry, str):
+                        # this should not happen, so we throw
+                        raise Exception("Expected string - something really bad happened")
+                    if not NumericCsvValidator.is_float(entry):
+                     results.append(ValidationResult(False, "Not a float",
+                            details=f"Row {row_nr}, column {column_nr}: Can not parse '{entry}' as float."))
+        return results
