@@ -34,7 +34,7 @@ class Migration(migrations.Migration):
         ),
         migrations.AddField(
             model_name='measurement',
-            name='data_handler_id',
+            name='data_handler',
             field=models.CharField(choices=[('NumericCsv', 'TestDataType')], default='NumericCsv', max_length=10),
             preserve_default=False,
         ),

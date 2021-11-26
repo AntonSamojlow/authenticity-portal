@@ -44,7 +44,7 @@ class MeasurementsView(TemplateView, BaseListView):
     def get_context_data(self, **kwargs):
         form = self.form_class(DATAHANDLER_CHOICES, self.source_choices, initial={
             'measured': datetime.now(),
-            'data_handler_id': DATAHANDLER_CHOICES[0],
+            'data_handler': DATAHANDLER_CHOICES[0],
             'source': self.source_choices[0] if len(self.source_choices) > 0 else None,
             'file': None
         })
@@ -68,13 +68,13 @@ class MeasurementsView(TemplateView, BaseListView):
             return Result(False, "No file selected",
                           "Please go back and select a file to upload").render_view()
 
-        data_handler_id = request.POST['data_handler_id']
+        data_handler = request.POST['data_handler']
         source = Source.objects.filter(id__exact=request.POST['source']).first()
 
         measurement = Measurement()
         measurement.name = request.POST['name']
-        measurement.data = DATAHANDLERS[data_handler_id].load_from_file(request.FILES['file'])
-        measurement.data_handler_id = data_handler_id
+        measurement.data = DATAHANDLERS[data_handler].load_from_file(request.FILES['file'])
+        measurement.data_handler = data_handler
         measurement.time_measured = request.POST['measured']
         measurement.user_created = request.user
         measurement.user_changed = request.user

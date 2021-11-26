@@ -27,7 +27,7 @@
             <thead>
                 <tr>
                     <th scope="col">Name</th>
-                    <th scope="col">Data type</th>
+                    <th scope="col">Data handler</th>
                     <th scope="col">Measured</th>
                     <th scope="col">Source</th>
                     <th scope="col">Uploaded</th>
@@ -37,7 +37,7 @@
                 {% for measurement in object_list %}
                 <tr>
                     <td scope="row"><a href="{{ measurement.get_absolute_url }}">{{ measurement.name }}</a></td>
-                    <td>{{ measurement.data_type }}</td>
+                    <td>{{ measurement.data_handler }}</td>
                     <td>{{ measurement.time_measured }}</td>
                     <td>{{ measurement.source }}</td>
                     <td>{{ measurement.time_created }} (by '{{ measurement.user_created }}')</td>

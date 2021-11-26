@@ -69,11 +69,11 @@ class Measurement(models.Model):
 
     # data interface
     data = models.TextField(help_text='file data, serialized to string in a suitable way')
-    data_handler_id = models.CharField(max_length=CHOICE_KEY_MAX_LENGTH, choices=DATAHANDLER_CHOICES)
+    data_handler = models.CharField(max_length=CHOICE_KEY_MAX_LENGTH, choices=DATAHANDLER_CHOICES)
 
     @property
     def handler(self) -> DataHandler:
-        return DATAHANDLERS[self.data_handler_id]
+        return DATAHANDLERS[self.data_handler]
     class Meta:
         ordering = ['time_created']
 
