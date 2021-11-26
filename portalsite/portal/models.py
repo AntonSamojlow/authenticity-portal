@@ -39,8 +39,7 @@ class Measurement(models.Model):
     # base attributes
     name = models.CharField(
         unique=True,
-        max_length=50,
-        default=f"measurement-{uuid4()}")
+        max_length=50)
     source = models.ForeignKey(Source, on_delete=models.RESTRICT)
     notes = models.TextField(
         help_text="description or notes for this measurement",
