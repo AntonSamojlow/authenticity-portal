@@ -68,16 +68,22 @@ class MeasurementsView(TemplateView, BaseListView):
                           "Please go back and select a file to upload").render_view()
 
         data_handler = request.POST['data_handler']
+        try:
+            data = DATAHANDLERS[data_handler].load_from_file(request.FILES['file'])
+        except UnicodeDecodeError as decode_error:
+            return Result(False, "Unicode decoding error", details_formatted=str(decode_error)).render_view()
+        except Exception as exc:
+            return Result(False, "Unhandled - failed to read", details_formatted=str(exc)).render_view()
         source = Source.objects.filter(id__exact=request.POST['source']).first()
 
         measurement = Measurement()
-        measurement.name = request.POST['name']
-        measurement.data = DATAHANDLERS[data_handler].load_from_file(request.FILES['file'])
+        measurement.data = data
         measurement.data_handler = data_handler
+        measurement.source = source
+        measurement.name = request.POST['name']
         measurement.time_measured = request.POST['measured']
         measurement.user_created = request.user
         measurement.user_changed = request.user
-        measurement.source = source
 
         validation_results = measurement.validate()
         if sum([0 if result.success else 1 for result in validation_results]) > 0:
