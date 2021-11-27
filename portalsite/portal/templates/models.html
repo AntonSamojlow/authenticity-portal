@@ -1,0 +1,33 @@
+{% extends "base_generic.html" %}
+
+{% block content %}
+<div>    
+    <div class="mb-5 mt-5">
+        <h4>Models</h4>
+        {% if perms.portal.view_model %}
+        <table class="table">
+            <thead>
+                <tr>
+                    <th scope="col">Name</th>
+                    <th scope="col">Type</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for model in object_list %}
+                <tr>
+                    <td scope="row"><a href="{{ model.get_absolute_url }}">{{ model.name }}</a></td>
+                    <td>{{ model.model_type }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td>EMPTY</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p>You don't have permission to view models.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

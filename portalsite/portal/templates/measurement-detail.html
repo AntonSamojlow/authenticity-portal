@@ -1,0 +1,79 @@
+{% extends "base_generic.html" %}
+
+{% block content %}
+<div>
+    <div class="mb-5 mt-5">
+        <h1>Measurement</h1>
+        {% if perms.portal.view_measurement %}
+        <dl class="row mb-5">
+            <dt class="col-sm-3">Name</dt>
+            <dd class="col-sm-9">{{ object.name }}</dd>
+
+            <dt class="col-sm-3">Data handler</dt>
+            <dd class="col-sm-9">{{ object.data_handler }}</dd>
+
+            <dt class="col-sm-3">Data source</dt>
+            <dd class="col-sm-9">{{ object.source }}</dd>
+
+            <dt class="col-sm-3">Time of measurement</dt>
+            <dd class="col-sm-9">{{ object.time_measured }}</dd>
+
+            <dt class="col-sm-3">Uploaded</dt>
+            <dd class="col-sm-9">{{ object.time_created }} (by user '{{ object.user_created }}')</dd>
+
+            <dt class="col-sm-3">Last changed</dt>
+            <dd class="col-sm-9">{{ object.time_changed }} (by user '{{ object.user_changed }}')</dd>
+
+            <dt class="col-sm-3">Notes</dt>
+            <dd class="col-sm-9">
+                <pre>{{ object.notes }}</pre>
+            </dd>
+        </dl>
+        <div class="row mb-5 mt-5">
+            <h3 class="col-sm-12">Scores</h3>
+            <table class="table table-sm col-sm-12">
+                <thead>
+                    <tr>
+                        <th scope="col">Value</th>
+                        <th scope="col">Model</th>
+                    </tr>
+                </thead>
+                <tbody class="col-sm-12">
+
+                    {% for score in scores %}
+                    <tr>
+                        <td>{{ score.value }}</td>
+                        <td>{{ score.model }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="3">NO SCORES</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <button class="btn btn-outline-primary" type="submit">Score with</button>
+                {{ score_form }}
+            </form>
+        </div>
+        {% if user.is_staff %}
+        <dl class="row mb-5 mt-5">
+            <h3 class="col-sm-12">Data</h3>
+
+            <dt class="col-sm-3">Id</dt>
+            <dd class="col-sm-9">{{ object.id }}</dd>
+
+            <dt class="col-sm-3">Raw data</dt>
+            <dd class="col-sm-9">
+                <pre>{{ object.as_displaytext }}</pre>
+            </dd>
+            {% endif %}
+        </dl>
+        {% else %}
+        <p>You don't have permission to view measurements.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

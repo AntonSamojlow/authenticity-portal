@@ -1,0 +1,20 @@
+{% extends "base_generic.html" %}
+
+{% block content %}
+<div>
+    <div class="mb-5 mt-5">
+        <h1>Model details</h1>
+        {% if perms.portal.view_model %}
+        <dl class="row">
+            <dt class="col-sm-3">Name</dt>
+            <dd class="col-sm-9">{{ object.name }}</dd>
+
+            <dt class="col-sm-3">Type</dt>
+            <dd class="col-sm-9">{{ object.model_type }}</dd>
+        </dl>
+        {% else %}
+        <p>You don't have permission to view models.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

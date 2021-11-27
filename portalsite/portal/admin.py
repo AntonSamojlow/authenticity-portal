@@ -3,8 +3,6 @@ from . import models as dbm
 
 # Register your models here.
 admin.site.register(dbm.Measurement)
-admin.site.register(dbm.MeasurementDataType)
 admin.site.register(dbm.Model)
-admin.site.register(dbm.ModelType)
 admin.site.register(dbm.Scoring)
 admin.site.register(dbm.Source)
