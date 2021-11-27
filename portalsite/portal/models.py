@@ -1,9 +1,13 @@
+# standard
 from django.db import models
 from django.urls import reverse
 from django.conf import settings
-
 from uuid import uuid4
 
+# 3rd party
+from numpy import ndarray
+
+# local
 from .core.data_handler import DataHandler, NumericCsvHandler, ValidationResult
 from .core.model_type import ModelType, TestModelType
 
@@ -85,13 +89,16 @@ class Measurement(models.Model):
 
     # shortcuts via data handler
     def as_displaytext(self) -> str:
-        return self.handler.as_displaytext(self.data)
-
-    def as_array(self) -> str:
-        return self.handler.as_array(self.data)
+        return self.handler.to_displaytext(self.data)
 
     def as_json(self) -> str:
-        return self.handler.as_json(self.data)
+        return self.handler.to_json(self.data)
+
+    def model_input(self) -> ndarray:
+        return self.handler.to_model_input(self.data)
+
+    def model_target(self) -> ndarray:
+        return self.handler.to_model_target(self.data)
 
     def validate(self) -> list[ValidationResult]:
         return self.handler.validate(self.data)

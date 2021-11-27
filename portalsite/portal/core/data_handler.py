@@ -38,20 +38,23 @@ class DataHandler(ABC):
         """ ... """
 
     @abstractmethod
-    def as_json(self, data: StorageType, indent=None) -> str:
+    def to_json(self, data: StorageType, indent=None) -> str:
         """Returns the data formatted to json"""
 
     @abstractmethod
-    def as_displaytext(self, data: StorageType) -> str:
+    def to_displaytext(self, data: StorageType) -> str:
         """Returns the data formatted as text to be displayed"""
 
     @abstractmethod
-    def as_array(self, data: StorageType) -> ndarray:
-        """Returns the data as numpy arrau, i.p. suitable a model input"""
-
+    def to_model_input(self, data: StorageType) -> ndarray:
+        """Returns the model input part of the data as numpy array, suitable for scroing and training"""
+    
+    @abstractmethod
+    def to_model_target(self, data: StorageType) -> ndarray:
+        """Returns the model target (or 'label') of the data as numpy array, suitable for training"""
 
 class NumericCsvHandler(DataHandler):
-    """Simple data type for development and testing"""
+    """Simple data type for development and testing.\nThe target values are assumed to be within the first column"""
 
     @property
     def name(self) -> str:
@@ -69,14 +72,20 @@ class NumericCsvHandler(DataHandler):
         """Tries to read data from file (without validation)."""
         return CsvParser.read(file).to_json()
 
-    def as_json(self, data: StorageType, indent=None) -> str:
+    def to_json(self, data: StorageType, indent=None) -> str:
         """Returns the data formatted to json"""
         return dumps(loads(data), indent=indent)
 
-    def as_displaytext(self, data: StorageType) -> str:
+    def to_displaytext(self, data: StorageType) -> str:
         """Returns the data formatted as text to be displayed"""
         return dumps(loads(data), indent=2)
 
-    def as_array(self, data: StorageType) -> ndarray:
-        """Returns the data as numpy arrau, i.p. suitable a model input"""
-        return asarray(CsvContent.from_json(data).rows)
+    def to_model_input(self, data: StorageType) -> ndarray:
+        """Returns the model input part of the data as numpy array, suitable for scroing and training."""
+        model_input = [row[1:] for row in CsvContent.from_json(data).rows]
+        return asarray(model_input)
+
+    def to_model_target(self, data: StorageType) -> ndarray:
+        """Returns the model target (or 'label') of the data as numpy array, suitable for training"""
+        model_target = [row[0] for row in CsvContent.from_json(data).rows]
+        return asarray(model_target)
