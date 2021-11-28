@@ -9,20 +9,29 @@ from numpy import ndarray
 
 # local
 from .core.data_handler import DataHandler, NumericCsvHandler, ValidationResult
-from .core.model_type import ModelType, TestModelType
+from .core.model_type import LinearRegressionModel, ModelType, TestModelType
 
 # initialize global types - note the keys are *limited in length* by virtue of the textfield they are used in
 CHOICE_KEY_MAX_LENGTH = 10
 
-DATAHANDLERS : dict[str, DataHandler] = {
-    'NumericCsv': NumericCsvHandler()
-}
-MODELTYPES : dict[str, ModelType] = {
-    'Test': TestModelType()
+DATAHANDLERS: dict[str, DataHandler] = {
+    handler.lookup_id: handler for handler in [
+        NumericCsvHandler()
+    ]
 }
 
-MODELTYPE_CHOICES = [(key,  model_type.name) for key, model_type in MODELTYPES.items()]
-DATAHANDLER_CHOICES = [(key,  handler.name) for key, handler in DATAHANDLERS.items()]
+MODELTYPES: dict[str, ModelType] = {
+    model_type.lookup_id: model_type for model_type in
+    [
+        TestModelType(),
+        LinearRegressionModel(2),
+        LinearRegressionModel(5),
+    ]
+}
+
+MODELTYPE_CHOICES = [(model_type.lookup_id,  model_type.name) for model_type in MODELTYPES.values()]
+DATAHANDLER_CHOICES = [(handler.lookup_id,  handler.name) for handler in DATAHANDLERS.values()]
+
 
 class Source(models.Model):
     """Source of a measurement"""
@@ -77,6 +86,7 @@ class Measurement(models.Model):
     @property
     def handler(self) -> DataHandler:
         return DATAHANDLERS[self.data_handler]
+
     class Meta:
         ordering = ['time_created']
 
@@ -108,6 +118,7 @@ class Model(models.Model):
     """Prediction model: combines with measurement to create a scoring"""
 
     name = models.CharField(unique=True, max_length=50)
+    data = models.TextField(help_text='model data (weights, parameters, coefficients, etc.), serialized to string')
 
     # type interface
     model_type = models.CharField(max_length=CHOICE_KEY_MAX_LENGTH, choices=MODELTYPE_CHOICES)
@@ -116,12 +127,12 @@ class Model(models.Model):
     def get_type(self) -> ModelType:
         return MODELTYPES[self.model_type]
 
-    def score(self, measurement : Measurement) -> 'Scoring':
+    def score(self, measurement: Measurement) -> 'Scoring':
         """Returns a new scoring"""
         scoring = Scoring()
         scoring.value = self.get_type.score(self, measurement)
         scoring.model = self
-        scoring.measurement = measurement 
+        scoring.measurement = measurement
         return scoring
 
     def __str__(self):
@@ -130,6 +141,7 @@ class Model(models.Model):
     def get_absolute_url(self):
         """Returns the url to display the object."""
         return reverse('model-detail', args=[str(self.id)])
+
 
 class Scoring(models.Model):
     """Result of applying a model to a measurement"""

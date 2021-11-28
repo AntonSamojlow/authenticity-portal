@@ -72,8 +72,8 @@ class MeasurementsView(TemplateView, BaseListView):
             data = DATAHANDLERS[data_handler].load_from_file(request.FILES['file'])
         except UnicodeDecodeError as decode_error:
             return Result(False, "Unicode decoding error", details_formatted=str(decode_error)).render_view()
-        except Exception as exc:
-            return Result(False, "Unhandled - failed to read", details_formatted=str(exc)).render_view()
+        # except Exception as exc:
+        #     return Result(False, "Unhandled - failed to read", details_formatted=str(exc)).render_view()
         source = Source.objects.filter(id__exact=request.POST['source']).first()
 
         measurement = Measurement()
