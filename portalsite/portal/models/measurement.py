@@ -70,7 +70,7 @@ class Measurement(models.Model):
         ordering = ['time_created']
 
     def __str__(self) -> str:
-        return str(self.id)
+        return str(self.name)
 
     def get_absolute_url(self) -> str:
         """Returns the url to display the object."""

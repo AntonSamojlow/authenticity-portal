@@ -5,7 +5,7 @@
     <div class="mb-5 mt-5">
         <h1>Model details</h1>
         {% if perms.portal.view_model %}
-        <dl class="row">
+        <dl class="row mb-5">
             <dt class="col-sm-3">Name</dt>
             <dd class="col-sm-9">{{ object.name }}</dd>
 
@@ -14,8 +14,19 @@
 
             <dt class="col-sm-3">Details</dt>
             <dd class="col-sm-9">
-                <pre>{{ object.details }}</pre></dd>
+                <pre>{{ object.details }}</pre>
+            </dd>
         </dl>
+        <div class="row mb-5 mt-5">
+            <h3 class="col-sm-12">Train the model</h3>
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <table>
+                    {{ train_form }}
+                </table>
+                <button class="btn btn-outline-primary" type="submit">Start training...</button>
+            </form>
+        </div>
         {% else %}
         <p>You don't have permission to view models.</p>
         {% endif %}

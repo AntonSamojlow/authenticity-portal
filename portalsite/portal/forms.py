@@ -1,4 +1,5 @@
 from django import forms
+from portal.models import Measurement
 
 class MeasurementUploadForm(forms.Form):
     def __init__(self, data_handler_choices: list, source_choices: list, *args, **kwargs) -> None:
@@ -18,4 +19,17 @@ class MeasurementPredictForm(forms.Form):
         super().__init__(*args, **kwargs)
         self.fields['model'].choices = model_choices
 
-    model = forms.ChoiceField()
+    model = forms.ChoiceField(required=True)
+  
+
+class ModelTrainForm(forms.Form):
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+
+    @staticmethod
+    def _get_query_set():
+        return Measurement.objects.all()
+
+    name = forms.CharField(required=False,
+        help_text="Name of the resulting trained model - leave blank to *update* the current model")
+    measurements = forms.ModelMultipleChoiceField(queryset=_get_query_set())

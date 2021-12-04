@@ -81,9 +81,9 @@ class LinearRegressionModel(ModelType):
               max_iterations: int,
               max_seconds: int) -> tuple[ModelStorageType, float]:
         """Trains a model, returning the new model with its score"""
-        X_list = [m.model_input() for m in measurements]
-        y_list = [m.model_target() for m in measurements]
+        X_concat = np.concatenate([m.model_input() for m in measurements], axis=0)
+        y_concat = np.concatenate([m.model_target() for m in measurements], axis=0)
         lr_current = self.__load_model(model)
-        lr_fitted = lr_current.fit(X_list, y_list)
-        score = lr_fitted.score(X_list, y_list)
+        lr_fitted = lr_current.fit(X_concat, y_concat)
+        score = lr_fitted.score(X_concat, y_concat)
         return (self.__get_model_data(lr_fitted), score)

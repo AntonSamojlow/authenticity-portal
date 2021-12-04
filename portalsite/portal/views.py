@@ -10,7 +10,7 @@ from django.views.generic import TemplateView, DetailView
 from django.views.generic.list import BaseListView, ListView
 
 # local
-from portal.forms import MeasurementUploadForm, MeasurementPredictForm
+from portal.forms import MeasurementUploadForm, MeasurementPredictForm, ModelTrainForm
 from portal.models import Measurement, Model, Source, Prediction
 from portal.core import DATAHANDLERS
 
@@ -146,15 +146,64 @@ class ModelsView(ListView):
         super().__init__(**kwargs)
         self.object_list = self.model.objects.all()
 
-    def get_context_data(self, **kwargs):
-        context = ListView.get_context_data(self, **kwargs)
-        return context
-
 
 class ModelDetailView(DetailView):
     model = Model
     template_name = 'model-detail.html'
+    form_class = ModelTrainForm
 
+    def __init__(self, **kwargs: any) -> None:
+        super().__init__(**kwargs)
+        # reload the choices
+        self.measurement_choices = [(d.id, d.name) for d in list(Measurement.objects.all())]
+
+    def get_context_data(self, **kwargs):
+        context = DetailView.get_context_data(self, **kwargs)
+        context["train_form"] = self.form_class()
+        # self.measurement_choices, initial={
+        #     'model': self.measurement_choices[0] if len(self.measurement_choices) > 0 else None,
+        # })
+        return context
+
+    
+    def post(self, request, *args, **kwargs):
+        form = self.form_class(request.POST)
+        if(form.is_valid()):
+            data = form.cleaned_data
+            name = data.get('name')
+            if name and Model.objects.filter(name=name).count() > 0:
+                return Result(False,"Model already exists","Please choose a different name").render_view()
+               
+
+            measurements = list(data.get('measurements'))
+            model: Model = self.get_object()
+            old_score = sum([model.score(m).value for m in measurements])/len(measurements)
+            try:
+                trained_model_data, new_score = model.get_type.train(
+                    model, 
+                    measurements,
+                     max_iterations=1, 
+                    max_seconds=10)
+            except Exception as exc:
+                return Result(False,"Training failed", str(exc)).render_view()
+
+
+           
+            operation_text = ""
+            if name:
+                Model(name=name, 
+                    data=trained_model_data,
+                    model_type = model.model_type).save()
+                operation_text = f"'{name}' was saved"
+            else:
+                model.data = trained_model_data
+                model.save() 
+                operation_text = f"'{model.name}' was updated"
+            
+            return Result(True, "Training finished",
+                f"score before: {old_score}\nscore after: {new_score}\n{operation_text}").render_view()
+            
+       
 
 @dataclass
 class Result():
