@@ -18,10 +18,11 @@ if TYPE_CHECKING:
 # endregion
 
 
-class Scoring(models.Model):
-    """Performance evaluation of a models prediction against a labelled measurement"""
+class Prediction(models.Model):
+    """Result of applying a model to a measurement"""
 
-    value = models.FloatField(default=0)
+    score = models.FloatField(default=0)
+    result = models.TextField()
     model = models.ForeignKey('Model', on_delete=models.CASCADE)
     measurement = models.ForeignKey('Measurement', on_delete=models.CASCADE)
 
@@ -30,4 +31,4 @@ class Scoring(models.Model):
 
     def get_absolute_url(self):
         """Returns the url to display the object."""
-        return reverse('scoring-detail', args=[str(self.id)])
+        return reverse('prediction-detail', args=[str(self.id)])

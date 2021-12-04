@@ -62,6 +62,10 @@ class Measurement(models.Model):
     def handler(self) -> 'DataHandler':
         return DATAHANDLERS.get(self.data_handler)
 
+    @property
+    def is_labelled(self) -> bool:
+        return self.model_target is None
+        
     class Meta:
         ordering = ['time_created']
 

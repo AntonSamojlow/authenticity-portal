@@ -11,10 +11,11 @@ from django.urls import reverse
 # local
 from portal.core import MODELTYPES
 from .scoring import Scoring
+from .prediction import Prediction
 
 # type hints
 if TYPE_CHECKING:
-    from portal.core.model_type.model_type import ModelType
+    from portal.core.model_type import ModelType
     from portal.models import Measurement
 # endregion
 
@@ -32,14 +33,21 @@ class Model(models.Model):
     def get_type(self) -> 'ModelType':
         return MODELTYPES.get(self.model_type)
 
-    def score(self, measurement: 'Measurement') -> 'Scoring':
+    def score(self, measurement: 'Measurement') -> Scoring:
         """Returns a new scoring"""
-        scoring = Scoring()
-        scoring.value = self.get_type.score(self, measurement)
-        scoring.model = self
-        scoring.measurement = measurement
-        return scoring
+        return Scoring(
+            value = self.get_type.score(self, measurement),
+            model = self,
+            measurement = measurement)
 
+    def predict(self, measurement: 'Measurement') -> Prediction:
+        """Returns a new prediction"""
+        return Prediction(
+            result = self.get_type.predict(self, measurement),
+            score = self.get_type.score(self, measurement),
+            model = self,
+            measurement = measurement)
+        
     def __str__(self):
         return str(self.name)
 
