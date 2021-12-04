@@ -14,7 +14,7 @@ from .scoring import Scoring
 
 # type hints
 if TYPE_CHECKING:
-    from portal.core.model_type import ModelType
+    from portal.core.model_type.model_type import ModelType
     from portal.models import Measurement
 # endregion
 

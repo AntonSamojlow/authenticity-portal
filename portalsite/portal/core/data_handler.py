@@ -17,7 +17,7 @@ DataStorageType: TypeAlias = str
 
 
 class DataHandler(ABC, NamedIdObject):
-    """Tooling to validate and transform measurement data which is assumed to be of the type 'Source'"""
+    """Tooling to validate and transform measurement data"""
     @property
     @abstractmethod
     def description(self) -> str:
