@@ -36,12 +36,16 @@ class TestModelType(ModelType):
         return self.__doc__
 
     def score(self, model: 'Model', measurement: 'Measurement') -> float:
-        """Returns the score of a measurement against a model"""
+        """Returns a models score, evaluated against a _labelled_ measurement (throws/undefined if unlabelled)"""
         return 0.0
 
     def predict(self, model: 'Model', measurement: 'Measurement') -> np.ndarray:
-        """Returns the prediction of a measurement against a model"""
+        """Returns a models prediction of a measurement"""
         return np.array(0.0)
+
+    def details(self, model: 'Model') -> str:
+        """A formatted text describing the concrete data/paramters of the given model"""
+        return self.__doc__
 
     def train(self,
               model: 'Model',

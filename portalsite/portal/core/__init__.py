@@ -6,5 +6,4 @@ from .named_id_manager import NamedIdManager
 DATAHANDLERS = NamedIdManager([NumericCsvHandler()])
 
 MODELTYPES = NamedIdManager([TestModelType(),
-                             LinearRegressionModel(2),
-                             LinearRegressionModel(5)])
+                             LinearRegressionModel()])

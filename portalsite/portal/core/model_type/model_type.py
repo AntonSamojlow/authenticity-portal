@@ -34,6 +34,10 @@ class ModelType(ABC,NamedIdObject):
     def predict(self, model: 'Model', measurement: 'Measurement') -> np.ndarray:
         """Returns a models prediction of a measurement"""
 
+    @abstractmethod
+    def details(self, model: 'Model') -> str:
+        """A formatted text describing the concrete data/paramters of the given model"""
+
     @classmethod
     @abstractmethod
     def train(cls,

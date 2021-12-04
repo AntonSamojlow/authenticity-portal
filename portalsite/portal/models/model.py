@@ -33,6 +33,11 @@ class Model(models.Model):
     def get_type(self) -> 'ModelType':
         return MODELTYPES.get(self.model_type)
 
+    @property
+    def details(self) -> str:
+        """A formatted text describing the concrete data/paramters of the given model"""
+        return self.get_type.details(self)
+
     def score(self, measurement: 'Measurement') -> Scoring:
         """Returns a new scoring"""
         if not measurement.is_labelled:
@@ -49,7 +54,7 @@ class Model(models.Model):
             score = self.get_type.score(self, measurement) if measurement.is_labelled else float('NaN'),
             model = self,
             measurement = measurement)
-        
+
     def __str__(self):
         return str(self.name)
 
