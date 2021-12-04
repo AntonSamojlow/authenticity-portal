@@ -1,0 +1,89 @@
+"""Data base model: Measurement"""
+
+# region imports
+# standard
+from typing import TYPE_CHECKING
+from django.db import models
+from django.urls import reverse
+from django.conf import settings
+
+# 3rd party
+from numpy import ndarray
+
+# local
+from portal.core import DATAHANDLERS
+from .source import Source
+
+# type hints
+if TYPE_CHECKING:    
+    from core.dataclasses import ValidationResult
+    from core.data_handler import DataHandler
+
+# endregion
+
+class Measurement(models.Model):
+    """Represents a measurement"""
+
+    # base attributes
+    name = models.CharField(
+        unique=True,
+        max_length=50)
+    source = models.ForeignKey(Source, on_delete=models.RESTRICT)
+    notes = models.TextField(
+        help_text="description or notes for this measurement",
+        null=True,
+        blank=True)
+    time_measured = models.DateTimeField(
+        help_text="time the data was measured")
+
+    # change tracking attributes
+    time_created = models.DateTimeField(auto_now_add=True, help_text="fist time this measurement was saved to database")
+    time_changed = models.DateTimeField(auto_now=True, help_text="last time this measurement was changed")
+    user_created = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.RESTRICT,
+        help_text="user that created this measurement in the database",
+        # exclude backwards relation from User to this field:
+        related_name='+',
+    )
+    user_changed = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.RESTRICT,
+        help_text="user that last changed this measurement in the database",
+        # exclude backwards relation from User to this field:
+        related_name='+',
+    )
+
+    # data interface
+    data = models.TextField(help_text='file data, serialized to string in a suitable way')
+    data_handler = models.CharField(max_length=DATAHANDLERS.id_length, choices=DATAHANDLERS.choices)
+
+    @property
+    def handler(self) -> 'DataHandler':
+        return DATAHANDLERS.get(self.data_handler)
+
+    class Meta:
+        ordering = ['time_created']
+
+    def __str__(self) -> str:
+        return str(self.id)
+
+    def get_absolute_url(self) -> str:
+        """Returns the url to display the object."""
+        return reverse('measurement-detail', args=[str(self.id)])
+
+    # shortcuts via data handler
+    def as_displaytext(self) -> str:
+        return self.handler.to_displaytext(self.data)
+
+    def as_json(self) -> str:
+        return self.handler.to_json(self.data)
+
+    def model_input(self) -> ndarray:
+        return self.handler.to_model_input(self.data)
+
+    def model_target(self) -> ndarray:
+        return self.handler.to_model_target(self.data)
+
+    def validate(self) -> list['ValidationResult']:
+        return self.handler.validate(self.data)

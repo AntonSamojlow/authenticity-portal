@@ -10,25 +10,14 @@ from django.core.files.uploadedfile import UploadedFile
 # local
 from .csvtools import CsvParser, NumericCsvValidator
 from .dataclasses import ValidationResult, CsvContent
-
+from .named_id_manager import NamedIdObject
 
 DataStorageType: TypeAlias = str
 """Format/type used to store the data in the database."""
 
 
-class DataHandler(ABC):
+class DataHandler(ABC, NamedIdObject):
     """Tooling to validate and transform measurement data which is assumed to be of the type 'Source'"""
-    
-    @property
-    @abstractmethod
-    def lookup_id(self) -> str:
-        """Identifier used in internal dictionaries - maximal length 10"""
-
-    @property
-    @abstractmethod
-    def name(self) -> str:
-        """Returns a *short, concise* display name of the handler"""
-
     @property
     @abstractmethod
     def description(self) -> str:
@@ -62,7 +51,7 @@ class NumericCsvHandler(DataHandler):
     """Simple data type for development and testing.\nThe target values are assumed to be within the first column"""
 
     @property
-    def lookup_id(self) -> str:
+    def id_(self) -> str:
         return "NumericCsv"
     
     @property
@@ -98,3 +87,4 @@ class NumericCsvHandler(DataHandler):
         """Returns the model target (or 'label') of the data as numpy array, suitable for training"""
         model_target = [float(row[0]) for row in CsvContent.from_json(data).rows]
         return asarray(model_target)
+        

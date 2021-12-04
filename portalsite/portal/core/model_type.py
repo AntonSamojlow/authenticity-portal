@@ -1,31 +1,26 @@
+# region imports
+# standard
 from json import dumps, loads
 from abc import ABC, abstractmethod
-from sklearn.linear_model import LinearRegression
 
 from typing import TYPE_CHECKING, TypeAlias
-
+# 3rd party
 import numpy as np
+from sklearn.linear_model import LinearRegression
 
+# local
+from .named_id_manager import NamedIdObject
+
+# type hints
 if TYPE_CHECKING:
     from ..models import Model, Measurement
 
+# endregion
 
 ModelStorageType: TypeAlias = str
 """Format/type used to store the model data in the database."""
-
-
-class ModelType(ABC):
+class ModelType(ABC,NamedIdObject):
     """Type of a prediction model"""
-
-    @property
-    @abstractmethod
-    def lookup_id(self) -> str:
-        """Identifier used in internal dictionaries - maximal length 10"""
-
-    @property
-    @abstractmethod
-    def name(self) -> str:
-        """Returns a *short, concise* name"""
 
     @property
     @abstractmethod
@@ -38,13 +33,12 @@ class ModelType(ABC):
 
     @classmethod
     @abstractmethod
-    def train(self,
+    def train(cls,
               model: 'Model',
               measurements: list['Measurement'],
               max_iterations: int,
               max_seconds: int) -> tuple[ModelStorageType, float]:
         """Trains a model, returning the new model data with its score"""
-
 
 class TestModelType(ModelType):
     """This model type is a dummy implementation for development and testing::
@@ -53,7 +47,7 @@ class TestModelType(ModelType):
     """
 
     @property
-    def lookup_id(self) -> str:
+    def id_(self) -> str:
         """Identifier used in internal dictionaries - maximal length 10"""
         return "Test"
 
@@ -87,14 +81,14 @@ class LinearRegressionModel(ModelType):
         super().__init__()
         # TODO: looks like we could remove the linear regression feature? The coef_ determine the model fully...
         self.nr_features = nr_features
-        self.__lookup_id = f"LReg-{self.nr_features}"
-        if len(self.__lookup_id) > 10:
+        self.__id_ = f"LReg-{self.nr_features}"
+        if len(self.__id_) > 10:
             raise Exception("LinearRegressionModel with {} features is not supported (lookup id too long")
 
     @property
-    def lookup_id(self) -> str:
+    def id_(self) -> str:
         """Identifier used in internal dictionaries - maximal length 10"""
-        return self.__lookup_id
+        return self.__id_
 
     @property
     def name(self) -> str:
@@ -111,9 +105,9 @@ class LinearRegressionModel(ModelType):
         if ('object_type' not in json_data.keys()
             or 'coef_' not in json_data.keys()
             or 'intercept_' not in json_data.keys()):
-            raise KeyError(self.lookup_id + " failed to load model (data lacking required keys)")
-        if json_data['object_type'] != self.lookup_id + "-model_data":
-            raise ValueError(self.lookup_id + " failed to load model (model data has wrong object_type)")
+            raise KeyError(self.id_ + " failed to load model (data lacking required keys)")
+        if json_data['object_type'] != self.id_ + "-model_data":
+            raise ValueError(self.id_ + " failed to load model (model data has wrong object_type)")
         lr = LinearRegression()
         lr.coef_ = np.array(json_data['coef_'])
         lr.intercept_ = json_data['intercept_']
@@ -121,7 +115,7 @@ class LinearRegressionModel(ModelType):
 
     def __get_model_data(self, lr_model: LinearRegression) -> ModelStorageType:
         json_dict = {
-            'object_type': self.lookup_id + "-model_data",
+            'object_type': self.id_ + "-model_data",
             'coef_': lr_model.coef_.tolist(),
             'intercept_': lr_model.intercept_
         }

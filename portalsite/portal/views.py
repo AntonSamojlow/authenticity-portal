@@ -11,8 +11,8 @@ from django.views.generic.list import BaseListView, ListView
 
 # local
 from portal.forms import MeasurementUploadForm, MeasurementScoreForm
-from portal.models import DATAHANDLER_CHOICES, DATAHANDLERS, Measurement, Model, Scoring, Source
-from .core.data_handler import ValidationResult
+from portal.models import Measurement, Model, Scoring, Source
+from portal.core import DATAHANDLERS
 
 def index(request: HttpRequest):
 
@@ -41,9 +41,9 @@ class MeasurementsView(TemplateView, BaseListView):
         self.object_list = self.model.objects.all()
 
     def get_context_data(self, **kwargs):
-        form = self.form_class(DATAHANDLER_CHOICES, self.source_choices, initial={
+        form = self.form_class(DATAHANDLERS.choices, self.source_choices, initial={
             'measured': datetime.now(),
-            'data_handler': DATAHANDLER_CHOICES[0],
+            'data_handler': DATAHANDLERS.choices[0],
             'source': self.source_choices[0] if len(self.source_choices) > 0 else None,
             'file': None
         })
@@ -52,7 +52,7 @@ class MeasurementsView(TemplateView, BaseListView):
         return context
 
     def post(self, request, *args, **kwargs):
-        form = self.form_class(DATAHANDLER_CHOICES, self.source_choices, request.POST)
+        form = self.form_class(DATAHANDLERS.choices, self.source_choices, request.POST)
         name_already_exists: bool = Measurement.objects.filter(
             name__exact=request.POST['name']).count() > 0
 
@@ -69,7 +69,7 @@ class MeasurementsView(TemplateView, BaseListView):
 
         data_handler = request.POST['data_handler']
         try:
-            data = DATAHANDLERS[data_handler].load_from_file(request.FILES['file'])
+            data = DATAHANDLERS.get(data_handler).load_from_file(request.FILES['file'])
         except UnicodeDecodeError as decode_error:
             return Result(False, "Unicode decoding error", details_formatted=str(decode_error)).render_view()
         # except Exception as exc:
