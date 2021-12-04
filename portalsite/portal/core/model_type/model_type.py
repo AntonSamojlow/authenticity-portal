@@ -28,11 +28,11 @@ class ModelType(ABC,NamedIdObject):
 
     @abstractmethod
     def score(self, model: 'Model', measurement: 'Measurement') -> float:
-        """Returns the score of a measurement against a model"""
+        """Returns a models score, evaluated against a _labelled_ measurement (throws/undefined if unlabelled)"""
 
     @abstractmethod
     def predict(self, model: 'Model', measurement: 'Measurement') -> np.ndarray:
-        """Returns the prediction of a measurement against a model"""
+        """Returns a models prediction of a measurement"""
 
     @classmethod
     @abstractmethod

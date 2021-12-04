@@ -30,32 +30,34 @@
             </dd>
         </dl>
         <div class="row mb-5 mt-5">
-            <h3 class="col-sm-12">Scores</h3>
+            <h3 class="col-sm-12">Predictions</h3>
             <table class="table table-sm col-sm-12">
                 <thead>
                     <tr>
-                        <th scope="col">Value</th>
                         <th scope="col">Model</th>
+                        <th scope="col">Score</th>
+                        <th scope="col">Result</th>
                     </tr>
                 </thead>
                 <tbody class="col-sm-12">
 
-                    {% for score in scores %}
+                    {% for prediction in predictions %}
                     <tr>
-                        <td>{{ score.value }}</td>
-                        <td>{{ score.model }}</td>
+                        <td>{{ prediction.model }}</td>
+                        <td>{{ prediction.score }}</td>
+                        <td>{{ prediction.result }}</td>
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="3">NO SCORES</td>
+                        <td colspan="3">NO PREDICTIONS</td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
             <form method="post" enctype="multipart/form-data">
                 {% csrf_token %}
-                <button class="btn btn-outline-primary" type="submit">Score with</button>
-                {{ score_form }}
+                <button class="btn btn-outline-primary" type="submit">Predict with</button>
+                {{ predict_form }}
             </form>
         </div>
         {% if user.is_staff %}

@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 class Prediction(models.Model):
     """Result of applying a model to a measurement"""
 
-    score = models.FloatField(default=0)
+    score = models.FloatField(null=True, blank= True)
     result = models.TextField()
     model = models.ForeignKey('Model', on_delete=models.CASCADE)
     measurement = models.ForeignKey('Measurement', on_delete=models.CASCADE)

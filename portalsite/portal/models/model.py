@@ -35,6 +35,8 @@ class Model(models.Model):
 
     def score(self, measurement: 'Measurement') -> Scoring:
         """Returns a new scoring"""
+        if not measurement.is_labelled:
+            raise NotImplementedError("Can not score unlabelled measurements")
         return Scoring(
             value = self.get_type.score(self, measurement),
             model = self,
@@ -44,7 +46,7 @@ class Model(models.Model):
         """Returns a new prediction"""
         return Prediction(
             result = self.get_type.predict(self, measurement),
-            score = self.get_type.score(self, measurement),
+            score = self.get_type.score(self, measurement) if measurement.is_labelled else float('NaN'),
             model = self,
             measurement = measurement)
         

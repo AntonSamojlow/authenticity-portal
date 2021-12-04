@@ -10,8 +10,8 @@ from django.views.generic import TemplateView, DetailView
 from django.views.generic.list import BaseListView, ListView
 
 # local
-from portal.forms import MeasurementUploadForm, MeasurementScoreForm
-from portal.models import Measurement, Model, Scoring, Source
+from portal.forms import MeasurementUploadForm, MeasurementPredictForm
+from portal.models import Measurement, Model, Source, Prediction
 from portal.core import DATAHANDLERS
 
 def index(request: HttpRequest):
@@ -106,7 +106,7 @@ class MeasurementsView(TemplateView, BaseListView):
 class MeasurementDetailView(DetailView):
     model = Measurement
     template_name = 'measurement-detail.html'
-    form_class = MeasurementScoreForm
+    form_class = MeasurementPredictForm
 
     def __init__(self, **kwargs: any) -> None:
         super().__init__(**kwargs)
@@ -115,26 +115,27 @@ class MeasurementDetailView(DetailView):
 
     def get_context_data(self, **kwargs):
         context = DetailView.get_context_data(self, **kwargs)
-        scores = Scoring.objects.filter(measurement__exact=self.get_object())
-        context["scores"] = scores
-        context["score_form"] = self.form_class(self.model_choices, initial={
+        predictions = Prediction.objects.filter(measurement__exact=self.get_object())
+        context["predictions"] = predictions
+        context["predict_form"] = self.form_class(self.model_choices, initial={
             'model': self.model_choices[0] if len(self.model_choices) > 0 else None,
         })
         return context
 
     def post(self, request, *args, **kwargs):
         model: Model = Model.objects.filter(id__exact=request.POST['model']).first()
-        scoring = model.score(self.get_object())
-        print(scoring.value)
-        print(scoring.measurement)
-        print(scoring.model)
+        prediction = model.predict(self.get_object())
         try:
-            Scoring.save(scoring)
+            Prediction.save(prediction)
         except Exception as exc:
             # TODO: Replace this error by a generic one and write stacktrace only to log
             return Result(False, "Internal problem", str(exc)).render_view()
 
-        return Result(True, f"Computed score: {scoring.value}").render_view()
+        return Result(
+            True,
+            "Computed prediction",
+            f"Result:{prediction.result}\nScore:{prediction.score}"
+            ).render_view()
 
 
 class ModelsView(ListView):
