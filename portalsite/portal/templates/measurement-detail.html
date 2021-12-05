@@ -31,6 +31,10 @@
         </dl>
         <div class="row mb-5 mt-5">
             <h3 class="col-sm-12">Predictions</h3>
+            <form method="get" enctype="multipart/form-data">
+                <button class="btn btn-outline-primary" type="submit">Filter by</button>
+                {{ model_filter }}
+            </form>
             <table class="table table-sm col-sm-12">
                 <thead>
                     <tr>
@@ -82,7 +86,7 @@
             <form method="post" enctype="multipart/form-data">
                 {% csrf_token %}
                 <button class="btn btn-outline-primary" type="submit">Predict with</button>
-                {{ predict_form }}
+                {{ predict_filter }}
             </form>
         </div>
         {% if user.is_staff %}

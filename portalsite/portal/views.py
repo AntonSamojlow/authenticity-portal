@@ -14,14 +14,15 @@ from django.views.generic import TemplateView, DetailView
 from django.views.generic.list import BaseListView, ListView
 
 # local
-from portal.forms import MeasurementUploadForm, MeasurementPredictForm, ModelTrainForm
+from portal.forms import MeasurementUploadForm, FilterForm, ModelTrainForm
 from portal.models import Measurement, Model, Source, Prediction
 from portal.core import DATAHANDLERS
 
 # type hints
-if TYPE_CHECKING:   
+if TYPE_CHECKING:
     from django.db.models.query import QuerySet
-#endregion
+# endregion
+
 
 def index(request: HttpRequest):
 
@@ -96,10 +97,8 @@ class MeasurementsView(TemplateView, BaseListView):
 
         validation_results = measurement.validate()
         if sum([0 if result.success else 1 for result in validation_results]) > 0:
-            return Result(False, "Validation failed",
-                details_formatted = "\n".join([f"{result.name}: {result.details}" for result in validation_results])
-            ).render_view()
-
+            return Result(False, "Validation failed", details_formatted="\n".join(
+                [f"{result.name}: {result.details}" for result in validation_results])).render_view()
 
         try:
             Measurement.save(measurement)
@@ -115,9 +114,8 @@ class MeasurementsView(TemplateView, BaseListView):
 class MeasurementDetailView(DetailView):
     model = Measurement
     template_name = 'measurement-detail.html'
-    form_class = MeasurementPredictForm
 
-    def _get_choices(self) -> list[tuple[str, str]]:
+    def _get_predict_choices(self) -> list[tuple[str, str]]:
         measurement: Measurement = self.get_object()
         choices = []
         for m in Model.objects.all():
@@ -126,19 +124,33 @@ class MeasurementDetailView(DetailView):
         return choices
 
     def get_context_data(self, **kwargs):
-        choices = self._get_choices()
-
         context = DetailView.get_context_data(self, **kwargs)
-        predictions = list(Prediction.objects.filter(measurement__exact=self.get_object()))
-        predictions_page = Paginator(predictions, 10).get_page(self.request.GET.get('page'))
-        context['predictions_page'] = predictions_page
-        context["predict_form"] = self.form_class(choices, initial={
-            'model': choices if len(choices) > 0 else None,
-        })
+
+        model_id = FilterForm.ALL
+        if self.request.GET and 'model_filter' in self.request.GET:
+            model_id = self.request.GET.get('model_filter')
+        predictions: list[Prediction] = list(Prediction.objects.filter(measurement__exact=self.get_object()))    
+
+        filtered_predictions = []
+        if model_id == FilterForm.ALL:
+           filtered_predictions = predictions
+        else:
+            for p in predictions:
+                if p.model.id == int(model_id):
+                    filtered_predictions.append(p)
+        
+        context['model_filter'] = FilterForm(
+            'model_filter',
+            'model',
+            list(set((p.model.id, p.model.name)for p in predictions)),
+            initial=model_id,
+            includeAll=True)       
+        context['predictions_page'] = Paginator(filtered_predictions, 10).get_page(self.request.GET.get('page'))
+        context['predict_filter'] = FilterForm('predict_filter', 'model', self._get_predict_choices())
         return context
 
     def post(self, request, *args, **kwargs):
-        model: Model = Model.objects.filter(id__exact=request.POST['model']).first()
+        model: Model = Model.objects.filter(id__exact=request.POST['predict_filter']).first()
         prediction = model.predict(self.get_object())
         try:
             Prediction.save(prediction)
@@ -150,7 +162,7 @@ class MeasurementDetailView(DetailView):
             True,
             "Computed prediction",
             f"Result:{prediction.result}\nScore:{prediction.score}"
-            ).render_view()
+        ).render_view()
 
 
 class ModelsView(ListView):
@@ -171,7 +183,7 @@ class ModelDetailView(DetailView):
         context = DetailView.get_context_data(self, **kwargs)
         context["train_form"] = self.form_class(self._get_trainable_measurements())
         return context
-    
+
     def _get_trainable_measurements(self) -> 'QuerySet':
         # TODO This is ahighly ineffecient way to gather all trainable measurements:
         # 1. we walk through  Measurements twice: first retireving them, then just for generating a Queryset object
@@ -183,10 +195,8 @@ class ModelDetailView(DetailView):
         for m in Measurement.objects.all():
             if m.is_labelled and model.is_compatible(m):
                 trainable_ids.append(m.id)
-        
-        return Measurement.objects.filter(pk__in=trainable_ids)
 
-        
+        return Measurement.objects.filter(pk__in=trainable_ids)
 
     def post(self, request, *args, **kwargs):
         form = self.form_class(self._get_trainable_measurements(), request.POST)
@@ -194,38 +204,34 @@ class ModelDetailView(DetailView):
             data = form.cleaned_data
             name = data.get('name')
             if name and Model.objects.filter(name=name).count() > 0:
-                return Result(False,"Model already exists","Please choose a different name").render_view()
-               
+                return Result(False, "Model already exists", "Please choose a different name").render_view()
 
             measurements = list(data.get('measurements'))
             model: Model = self.get_object()
             old_score = sum([model.score(m).value for m in measurements])/len(measurements)
             try:
                 trained_model_data, new_score = model.get_type.train(
-                    model, 
+                    model,
                     measurements,
-                     max_iterations=1, 
+                    max_iterations=1,
                     max_seconds=10)
             except Exception as exc:
-                return Result(False,"Training failed", str(exc)).render_view()
+                return Result(False, "Training failed", str(exc)).render_view()
 
-
-           
             operation_text = ""
             if name:
-                Model(name=name, 
-                    data=trained_model_data,
-                    model_type = model.model_type).save()
+                Model(name=name,
+                      data=trained_model_data,
+                      model_type=model.model_type).save()
                 operation_text = f"'{name}' was saved"
             else:
                 model.data = trained_model_data
-                model.save() 
+                model.save()
                 operation_text = f"'{model.name}' was updated"
-            
+
             return Result(True, "Training finished",
-                f"score before: {old_score}\nscore after: {new_score}\n{operation_text}").render_view()
-            
-       
+                          f"score before: {old_score}\nscore after: {new_score}\n{operation_text}").render_view()
+
 
 @dataclass
 class Result():

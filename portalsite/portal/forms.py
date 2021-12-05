@@ -1,6 +1,5 @@
 from typing import TYPE_CHECKING
 from django import forms
-from portal.models import Measurement
 
 class MeasurementUploadForm(forms.Form):
     def __init__(self, data_handler_choices: list, source_choices: list, *args, **kwargs) -> None:
@@ -14,14 +13,22 @@ class MeasurementUploadForm(forms.Form):
     source = forms.ChoiceField()
     file = forms.FileField(required=False)
 
-
-class MeasurementPredictForm(forms.Form):
-    def __init__(self, model_choices: list, *args, **kwargs) -> None:
+class FilterForm(forms.Form):
+    ALL = 'ALL'
+    filter = forms.ChoiceField(required=True)
+    def __init__(self, name:str, label:str, choices: list, initial: str = None, includeAll =False, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
-        self.fields['model'].choices = model_choices
 
-    model = forms.ChoiceField(required=True)
-  
+        # Hack to allow several filters in same view (the POST request returns the variable name, currently 'filter')
+        self.fields[name] = self.fields['filter']
+        del self.fields['filter']
+        
+        if initial is not None:
+            self.fields[name].initial = initial
+
+        self.fields[name].label = label
+        self.fields[name].choices = ([(self.ALL,self.ALL)] if includeAll else []) + choices
+
 
 class ModelTrainForm(forms.Form):
     name = forms.CharField(required=False,
