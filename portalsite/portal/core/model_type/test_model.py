@@ -43,7 +43,7 @@ class TestModelType(ModelType):
         """Returns a models prediction of a measurement"""
         return np.array(0.0)
 
-    def details(self, model: 'Model') -> str:
+    def details_text(self, model: 'Model') -> str:
         """A formatted text describing the concrete data/paramters of the given model"""
         return self.__doc__
 

@@ -34,9 +34,9 @@ class Model(models.Model):
         return MODELTYPES.get(self.model_type)
 
     @property
-    def details(self) -> str:
+    def details_text(self) -> str:
         """A formatted text describing the concrete data/paramters of the given model"""
-        return self.get_type.details(self)
+        return self.get_type.details_text(self)
 
     def score(self, measurement: 'Measurement') -> Scoring:
         """Returns a new scoring"""

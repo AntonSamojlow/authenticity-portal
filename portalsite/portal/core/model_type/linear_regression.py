@@ -34,7 +34,7 @@ class LinearRegressionModel(ModelType):
         """Description of the type, its uses, and  possbily refering to external docs"""
         return self.__doc__
 
-    def details(self, model: 'Model') -> str:
+    def details_text(self, model: 'Model') -> str:
         """A formatted text describing the concrete data/paramters of the given model"""
         lreg = self.__load_model(model)
         return (

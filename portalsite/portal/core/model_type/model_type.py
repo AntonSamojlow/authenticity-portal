@@ -35,7 +35,7 @@ class ModelType(ABC,NamedIdObject):
         """Returns a models prediction of a measurement"""
 
     @abstractmethod
-    def details(self, model: 'Model') -> str:
+    def details_text(self, model: 'Model') -> str:
         """A formatted text describing the concrete data/paramters of the given model"""
 
     @classmethod
