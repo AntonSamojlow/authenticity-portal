@@ -47,6 +47,10 @@ class TestModelType(ModelType):
         """A formatted text describing the concrete data/paramters of the given model"""
         return self.__doc__
 
+    def compatible(self, model: 'Model', measurement: 'Measurement') -> bool:
+        """Returns true iff the measurement is a valid (prediction) input for the model"""
+        return True
+
     def train(self,
               model: 'Model',
               measurements: list['Measurement'],

@@ -1,6 +1,9 @@
+# region imports
 # standard
+from typing import TYPE_CHECKING
 from datetime import datetime
 from dataclasses import dataclass
+
 
 # 3rd party
 from django.http.request import HttpRequest
@@ -13,6 +16,11 @@ from django.views.generic.list import BaseListView, ListView
 from portal.forms import MeasurementUploadForm, MeasurementPredictForm, ModelTrainForm
 from portal.models import Measurement, Model, Source, Prediction
 from portal.core import DATAHANDLERS
+
+# type hints
+if TYPE_CHECKING:   
+    from django.db.models.query import QuerySet
+#endregion
 
 def index(request: HttpRequest):
 
@@ -108,17 +116,22 @@ class MeasurementDetailView(DetailView):
     template_name = 'measurement-detail.html'
     form_class = MeasurementPredictForm
 
-    def __init__(self, **kwargs: any) -> None:
-        super().__init__(**kwargs)
-        # reload the choices
-        self.model_choices = [(d.id, d.name) for d in list(Model.objects.all())]
+    def _get_choices(self) -> list[tuple[str, str]]:
+        measurement: Measurement = self.get_object()
+        choices = []
+        for m in Model.objects.all():
+            if m.is_compatible(measurement):
+                choices.append((m.id, m.name))
+        return choices
 
     def get_context_data(self, **kwargs):
+        choices = self._get_choices()
+
         context = DetailView.get_context_data(self, **kwargs)
         predictions = Prediction.objects.filter(measurement__exact=self.get_object())
         context["predictions"] = predictions
-        context["predict_form"] = self.form_class(self.model_choices, initial={
-            'model': self.model_choices[0] if len(self.model_choices) > 0 else None,
+        context["predict_form"] = self.form_class(choices, initial={
+            'model': choices if len(choices) > 0 else None,
         })
         return context
 
@@ -152,22 +165,29 @@ class ModelDetailView(DetailView):
     template_name = 'model-detail.html'
     form_class = ModelTrainForm
 
-    def __init__(self, **kwargs: any) -> None:
-        super().__init__(**kwargs)
-        # reload the choices
-        self.measurement_choices = [(d.id, d.name) for d in list(Measurement.objects.all())]
-
     def get_context_data(self, **kwargs):
         context = DetailView.get_context_data(self, **kwargs)
-        context["train_form"] = self.form_class()
-        # self.measurement_choices, initial={
-        #     'model': self.measurement_choices[0] if len(self.measurement_choices) > 0 else None,
-        # })
+        context["train_form"] = self.form_class(self._get_trainable_measurements())
         return context
-
     
+    def _get_trainable_measurements(self) -> 'QuerySet':
+        # TODO This is ahighly ineffecient way to gather all trainable measurements:
+        # 1. we walk through  Measurements twice: first retireving them, then just for generating a Queryset object
+        # - possible quick fix: use a MultipleChoiceField instaed and handle list of choices manually
+        # 2. the need to retrieve all measurements from db to check compatible is an even bigger design issue
+        # - need a stricter/better/more efficient way to figure out compatability just absed on a db fields (one query)
+        model: Model = self.get_object()
+        trainable_ids = []
+        for m in Measurement.objects.all():
+            if m.is_labelled and model.is_compatible(m):
+                trainable_ids.append(m.id)
+        
+        return Measurement.objects.filter(pk__in=trainable_ids)
+
+        
+
     def post(self, request, *args, **kwargs):
-        form = self.form_class(request.POST)
+        form = self.form_class(self._get_trainable_measurements(), request.POST)
         if(form.is_valid()):
             data = form.cleaned_data
             name = data.get('name')

@@ -38,6 +38,10 @@ class ModelType(ABC,NamedIdObject):
     def details_text(self, model: 'Model') -> str:
         """A formatted text describing the concrete data/paramters of the given model"""
 
+    @abstractmethod
+    def compatible(self, model: 'Model', measurement: 'Measurement') -> bool:
+        """Returns true iff the measurement is a valid (prediction) input for the model"""
+
     @classmethod
     @abstractmethod
     def train(cls,

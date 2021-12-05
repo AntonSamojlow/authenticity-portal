@@ -55,6 +55,10 @@ class Model(models.Model):
             model = self,
             measurement = measurement)
 
+    def is_compatible(self, measurement: 'Measurement') -> bool:
+        """Returns true iff the measurement is a valid input (for this models prediction)"""
+        return self.get_type.compatible(self, measurement)
+
     def __str__(self):
         return str(self.name)
 

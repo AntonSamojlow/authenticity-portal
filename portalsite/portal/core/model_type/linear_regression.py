@@ -43,6 +43,16 @@ class LinearRegressionModel(ModelType):
             +f"Intercept={lreg.intercept_}"
         )
 
+    def compatible(self, model: 'Model', measurement: 'Measurement') -> bool:
+        """Returns true iff the measurement is a valid (prediction) input for the model"""
+        features = len(self.__load_model(model).coef_)
+        shape : tuple = measurement.model_input().shape
+        if len(shape) != 2:
+            return False
+        if int(shape[1]) != features:
+            return False
+        return True
+
     def __load_model(self, model: 'Model') -> LinearRegression:
         json_data: dict = loads(model.data)
         if ('object_type' not in json_data.keys()

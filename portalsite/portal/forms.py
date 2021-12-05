@@ -1,3 +1,4 @@
+from typing import TYPE_CHECKING
 from django import forms
 from portal.models import Measurement
 
@@ -23,13 +24,11 @@ class MeasurementPredictForm(forms.Form):
   
 
 class ModelTrainForm(forms.Form):
-    def __init__(self, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
-
-    @staticmethod
-    def _get_query_set():
-        return Measurement.objects.all()
-
     name = forms.CharField(required=False,
         help_text="Name of the resulting trained model - leave blank to *update* the current model")
-    measurements = forms.ModelMultipleChoiceField(queryset=_get_query_set())
+    measurements = forms.ModelMultipleChoiceField(queryset=None)
+
+    def __init__(self, measurement_query_set, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        self.fields['measurements'].queryset = measurement_query_set
+   
