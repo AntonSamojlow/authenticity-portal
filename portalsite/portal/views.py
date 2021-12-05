@@ -222,10 +222,13 @@ class ModelDetailView(DetailView):
             if name:
                 Model(name=name,
                       data=trained_model_data,
+                      user_created=request.user,
+                      user_changed=request.user,
                       model_type=model.model_type).save()
                 operation_text = f"'{name}' was saved"
             else:
                 model.data = trained_model_data
+                model.user_changed = request.user
                 model.save()
                 operation_text = f"'{model.name}' was updated"
 

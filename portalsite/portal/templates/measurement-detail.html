@@ -31,7 +31,7 @@
         </dl>
         <div class="row mb-5 mt-5">
             <h3 class="col-sm-12">Predictions</h3>
-            <form method="get" enctype="multipart/form-data">
+            <form class="col-sm-12" method="get" enctype="multipart/form-data">
                 <button class="btn btn-outline-primary" type="submit">Filter by</button>
                 {{ model_filter }}
             </form>
@@ -41,15 +41,16 @@
                         <th scope="col">Model</th>
                         <th scope="col">Score</th>
                         <th scope="col">Result</th>
+                        <th scope="col">Time</th>
                     </tr>
                 </thead>
-                <tbody class="col-sm-12">
-
+                <tbody>
                     {% for prediction in predictions_page %}
                     <tr>
                         <td>{{ prediction.model }}</td>
                         <td>{{ prediction.score }}</td>
                         <td>{{ prediction.result }}</td>
+                        <td>{{ prediction.time }}</td>
                     </tr>
                     {% empty %}
                     <tr>
@@ -57,32 +58,39 @@
                     </tr>
                     {% endfor %}
                 </tbody>
-                {% if predictions_page.paginator.num_pages > 1 %}
-                <div class="pagination">
-                    <span class="step-links">
-                        {% if predictions_page.has_previous %}
-                        <a href="?page=1">&laquo; first</a>
-                        <a href="?page={{ predictions_page.previous_page_number }}">previous</a>
-                        {% else %}
-                        <a>&laquo; first</a>
-                        <a>previous</a>
-                        {% endif %}
+                <tfoot>
+                    <tr>
+                        <td colspan="4">
+                            <div class="pagination ">
+                                {% if predictions_page.paginator.num_pages > 1 %}
+                                <span class="step-links">
+                                    {% if predictions_page.has_previous %}
+                                    <a href="?page=1">&laquo; first</a>
+                                    <a href="?page={{ predictions_page.previous_page_number }}">previous</a>
+                                    {% else %}
+                                    <a>&laquo; first</a>
+                                    <a>previous</a>
+                                    {% endif %}
 
-                        <span class="current">
-                            | Page {{ predictions_page.number }} of {{ predictions_page.paginator.num_pages }} |
-                        </span>
+                                    <span class="current"> | Page {{ predictions_page.number }} of
+                                        {{ predictions_page.paginator.num_pages }} |
+                                    </span>
 
-                        {% if predictions_page.has_next %}
-                        <a href="?page={{ predictions_page.next_page_number }}">next</a>
-                        <a href="?page={{ predictions_page.paginator.num_pages }}">last &raquo;</a>
-                        {% else %}
-                        <a>next</a>
-                        <a>last &raquo;</a>
-                        {% endif %}
-                    </span>
-                </div>
-                {% endif %}
+                                    {% if predictions_page.has_next %}
+                                    <a href="?page={{ predictions_page.next_page_number }}">next</a>
+                                    <a href="?page={{ predictions_page.paginator.num_pages }}">last &raquo;</a>
+                                    {% else %}
+                                    <a>next</a>
+                                    <a>last &raquo;</a>
+                                    {% endif %}
+                                </span>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                </tfoot>
             </table>
+
             <form method="post" enctype="multipart/form-data">
                 {% csrf_token %}
                 <button class="btn btn-outline-primary" type="submit">Predict with</button>

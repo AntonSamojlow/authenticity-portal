@@ -25,7 +25,9 @@ class Prediction(models.Model):
     result = models.TextField()
     model = models.ForeignKey('Model', on_delete=models.CASCADE)
     measurement = models.ForeignKey('Measurement', on_delete=models.CASCADE)
+    time = models.DateTimeField(auto_now_add=True, help_text="time it was generated")
 
+   
     def __str__(self):
         return str(self.id)
 

@@ -10,6 +10,7 @@
                 <tr>
                     <th scope="col">Name</th>
                     <th scope="col">Type</th>
+                    <th scope="col">Last changed</th>
                 </tr>
             </thead>
             <tbody>
@@ -17,6 +18,7 @@
                 <tr>
                     <td scope="row"><a href="{{ model.get_absolute_url }}">{{ model.name }}</a></td>
                     <td>{{ model.get_type.name }}</td>
+                    <td>{{ model.time_changed }} (by '{{ model.user_changed }}')</td>
                 </tr>
                 {% empty %}
                 <tr>

@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 # 3rd party
 from django.db import models
 from django.urls import reverse
+from django.conf import settings
 
 # local
 from portal.core import MODELTYPES
@@ -28,6 +29,24 @@ class Model(models.Model):
 
     # type interface
     model_type = models.CharField(max_length=MODELTYPES.id_length, choices=MODELTYPES.choices)
+
+    # change tracking attributes
+    time_created = models.DateTimeField(auto_now_add=True, help_text="fist time this measurement was saved to database")
+    time_changed = models.DateTimeField(auto_now=True, help_text="last time this measurement was changed")
+    user_created = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.RESTRICT,
+        help_text="user that created this model in the database",
+        # exclude backwards relation from User to this field:
+        related_name='+',
+    )
+    user_changed = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.RESTRICT,
+        help_text="user that last changed this model in the database",
+        # exclude backwards relation from User to this field:
+        related_name='+',
+    )
 
     @property
     def get_type(self) -> 'ModelType':
