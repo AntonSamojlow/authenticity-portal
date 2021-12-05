@@ -6,6 +6,7 @@ from dataclasses import dataclass
 
 
 # 3rd party
+from django.core.paginator import Paginator
 from django.http.request import HttpRequest
 from django.http.response import HttpResponse
 from django.shortcuts import render
@@ -128,8 +129,9 @@ class MeasurementDetailView(DetailView):
         choices = self._get_choices()
 
         context = DetailView.get_context_data(self, **kwargs)
-        predictions = Prediction.objects.filter(measurement__exact=self.get_object())
-        context["predictions"] = predictions
+        predictions = list(Prediction.objects.filter(measurement__exact=self.get_object()))
+        predictions_page = Paginator(predictions, 10).get_page(self.request.GET.get('page'))
+        context['predictions_page'] = predictions_page
         context["predict_form"] = self.form_class(choices, initial={
             'model': choices if len(choices) > 0 else None,
         })

@@ -41,7 +41,7 @@
                 </thead>
                 <tbody class="col-sm-12">
 
-                    {% for prediction in predictions %}
+                    {% for prediction in predictions_page %}
                     <tr>
                         <td>{{ prediction.model }}</td>
                         <td>{{ prediction.score }}</td>
@@ -53,6 +53,31 @@
                     </tr>
                     {% endfor %}
                 </tbody>
+                {% if predictions_page.paginator.num_pages > 1 %}
+                <div class="pagination">
+                    <span class="step-links">
+                        {% if predictions_page.has_previous %}
+                        <a href="?page=1">&laquo; first</a>
+                        <a href="?page={{ predictions_page.previous_page_number }}">previous</a>
+                        {% else %}
+                        <a>&laquo; first</a>
+                        <a>previous</a>
+                        {% endif %}
+
+                        <span class="current">
+                            | Page {{ predictions_page.number }} of {{ predictions_page.paginator.num_pages }} |
+                        </span>
+
+                        {% if predictions_page.has_next %}
+                        <a href="?page={{ predictions_page.next_page_number }}">next</a>
+                        <a href="?page={{ predictions_page.paginator.num_pages }}">last &raquo;</a>
+                        {% else %}
+                        <a>next</a>
+                        <a>last &raquo;</a>
+                        {% endif %}
+                    </span>
+                </div>
+                {% endif %}
             </table>
             <form method="post" enctype="multipart/form-data">
                 {% csrf_token %}
