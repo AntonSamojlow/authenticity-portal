@@ -15,15 +15,18 @@ if TYPE_CHECKING:
 # endregion
 
 class TestModelType(ModelType):
-    """This model type is a dummy implementation for development and testing::
+    """This model type is a dummy implementation for development and testing:
          - scoring will always return 0
          - training will always return the same 'model' and 0 score
     """
 
+    __instance_id = "Test"
+
     @property
     def id_(self) -> str:
         """Identifier used in internal dictionaries - maximal length 10"""
-        return "Test"
+        # all instances of this type are the same
+        return self.__instance_id
 
     @property
     def name(self) -> str:
@@ -58,3 +61,7 @@ class TestModelType(ModelType):
               max_seconds: int) -> tuple[ModelStorageType, float]:
         """Trains a model, returning the same model data with a score of 0"""
         return (model.data, 0.0)
+
+    def default_data(self) -> ModelStorageType:
+        """Returns the data corresponding to a default (trivial) model"""
+        return ""

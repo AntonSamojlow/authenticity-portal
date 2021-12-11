@@ -17,12 +17,14 @@ if TYPE_CHECKING:
 # endregion
 
 class LinearRegressionModel(ModelType):
-    """Base implementation of a linear regression model. Model details/data define the supported feature count."""
+    """Classic linear regression model."""
+    __instance_id = "LinearRegr"
 
     @property
     def id_(self) -> str:
         """Identifier"""
-        return "LinearRegr"
+        # all instances of this type are the same
+        return self.__instance_id
 
     @property
     def name(self) -> str:
@@ -33,7 +35,7 @@ class LinearRegressionModel(ModelType):
     def description(self) -> str:
         """Description of the type, its uses, and  possbily refering to external docs"""
         return self.__doc__
-
+    
     def details_text(self, model: 'Model') -> str:
         """A formatted text describing the concrete data/paramters of the given model"""
         lreg = self.__load_model(model)
@@ -97,3 +99,12 @@ class LinearRegressionModel(ModelType):
         lr_fitted = lr_current.fit(X_concat, y_concat)
         score = lr_fitted.score(X_concat, y_concat)
         return (self.__get_model_data(lr_fitted), score)
+
+    def default_data(self, nr_features: int) -> ModelStorageType:
+        """Returns the data corresponding to a default (trivial) model with given nr of features"""
+        json_dict = {
+            'object_type': self.id_ + "-model_data",
+            'coef_': [0.0 for _ in range(nr_features)],
+            'intercept_': 0.0
+        }
+        return dumps(json_dict)

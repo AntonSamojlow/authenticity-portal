@@ -39,3 +39,10 @@ class ModelTrainForm(forms.Form):
         super().__init__(*args, **kwargs)
         self.fields['measurements'].queryset = measurement_query_set
    
+
+class NewLinearRegssionModelForm(forms.Form):
+    name = forms.CharField(required=True)
+    features = forms.IntegerField(min_value=1, required=True)
+
+class NewTestModelForm(forms.Form):
+    name = forms.CharField(required=True)

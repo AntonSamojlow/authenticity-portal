@@ -11,12 +11,12 @@ from django.http.request import HttpRequest
 from django.http.response import HttpResponse
 from django.shortcuts import render
 from django.views.generic import TemplateView, DetailView
-from django.views.generic.list import BaseListView, ListView
+from django.views.generic.list import BaseListView
 
 # local
-from portal.forms import MeasurementUploadForm, FilterForm, ModelTrainForm
+from portal.forms import MeasurementUploadForm, FilterForm, ModelTrainForm, NewLinearRegssionModelForm, NewTestModelForm
 from portal.models import Measurement, Model, Source, Prediction
-from portal.core import DATAHANDLERS
+from portal.core import DATAHANDLERS, TESTMODELTYPE, LINEARREGRESSIONMODEL
 
 # type hints
 if TYPE_CHECKING:
@@ -42,7 +42,6 @@ def index(request: HttpRequest):
 class MeasurementsView(TemplateView, BaseListView):
     model = Measurement
     template_name = 'measurements.html'
-    form_class = MeasurementUploadForm
 
     def __init__(self, **kwargs: any) -> None:
         super().__init__(**kwargs)
@@ -51,7 +50,7 @@ class MeasurementsView(TemplateView, BaseListView):
         self.object_list = self.model.objects.all()
 
     def get_context_data(self, **kwargs):
-        form = self.form_class(DATAHANDLERS.choices, self.source_choices, initial={
+        form = MeasurementUploadForm(DATAHANDLERS.choices, self.source_choices, initial={
             'measured': datetime.now(),
             'data_handler': DATAHANDLERS.choices[0],
             'source': self.source_choices[0] if len(self.source_choices) > 0 else None,
@@ -62,7 +61,7 @@ class MeasurementsView(TemplateView, BaseListView):
         return context
 
     def post(self, request, *args, **kwargs):
-        form = self.form_class(DATAHANDLERS.choices, self.source_choices, request.POST)
+        form = MeasurementUploadForm(DATAHANDLERS.choices, self.source_choices, request.POST)
         name_already_exists: bool = Measurement.objects.filter(
             name__exact=request.POST['name']).count() > 0
 
@@ -165,7 +164,7 @@ class MeasurementDetailView(DetailView):
         ).render_view()
 
 
-class ModelsView(ListView):
+class ModelsView(TemplateView, BaseListView):
     model = Model
     template_name = 'models.html'
 
@@ -174,14 +173,52 @@ class ModelsView(ListView):
         self.object_list = self.model.objects.all()
 
 
+    def get_context_data(self, **kwargs):        
+        context = BaseListView.get_context_data(self, **kwargs)
+        context['new_lreg_model_form'] = NewLinearRegssionModelForm()
+        context['new_test_model_form'] = NewTestModelForm()
+        return context
+
+    def post(self, request : HttpRequest, *args, **kwargs):
+
+        if 'new_lreg_model_submit' in request.POST:
+            form = NewLinearRegssionModelForm(request.POST)
+            model_type = LINEARREGRESSIONMODEL
+        
+        elif 'new_test_model_submit' in request.POST:
+            form = NewTestModelForm(request.POST)
+            model_type = TESTMODELTYPE
+
+        if not form.is_valid():
+            return Result(False, "Data was not valid").render_view()
+        
+        name: str = request.POST['name']
+        if Model.objects.filter(name__exact=name).count() > 0:
+            return Result(False, "Name already exists",
+                        "Please go back and choose a different name").render_view()
+
+        model = Model()
+        model.name = name
+        model.user_created = request.user
+        model.user_changed = request.user
+        model.model_type = model_type.id_
+
+        if 'new_lreg_model_submit' in request.POST:    
+            model.data = LINEARREGRESSIONMODEL.default_data(int(request.POST['features']))
+        elif 'new_test_model_submit' in request.POST:
+            model.data = TESTMODELTYPE.default_data()
+        model.save()
+        return Result(True, f"New model '{name}' created",
+                      link_address=model.get_absolute_url(),
+                      link_text="See model details").render_view()
+
 class ModelDetailView(DetailView):
     model = Model
     template_name = 'model-detail.html'
-    form_class = ModelTrainForm
 
     def get_context_data(self, **kwargs):
         context = DetailView.get_context_data(self, **kwargs)
-        context["train_form"] = self.form_class(self._get_trainable_measurements())
+        context["train_form"] = ModelTrainForm(self._get_trainable_measurements())
         return context
 
     def _get_trainable_measurements(self) -> 'QuerySet':
@@ -199,7 +236,7 @@ class ModelDetailView(DetailView):
         return Measurement.objects.filter(pk__in=trainable_ids)
 
     def post(self, request, *args, **kwargs):
-        form = self.form_class(self._get_trainable_measurements(), request.POST)
+        form = ModelTrainForm(self._get_trainable_measurements(), request.POST)
         if(form.is_valid()):
             data = form.cleaned_data
             name = data.get('name')
