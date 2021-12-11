@@ -22,13 +22,23 @@
             </dd>
         </dl>
         <div class="row mb-5 mt-5">
+            <h3 class="col-sm-12">Copy the model</h3>
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <table>
+                    {{ copy_form }}
+                </table>
+                <button class="btn btn-outline-primary" type="submit" name="copy_submit">Copy</button>
+            </form>
+        </div>
+        <div class="row mb-5 mt-5">
             <h3 class="col-sm-12">Train the model</h3>
             <form method="post" enctype="multipart/form-data">
                 {% csrf_token %}
                 <table>
                     {{ train_form }}
                 </table>
-                <button class="btn btn-outline-primary" type="submit">Start training...</button>
+                <button class="btn btn-outline-primary" type="submit" name="train_submit">Start training...</button>
             </form>
         </div>
         {% else %}

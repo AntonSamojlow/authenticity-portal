@@ -3,6 +3,7 @@
 from typing import TYPE_CHECKING
 from datetime import datetime
 from dataclasses import dataclass
+from django import forms
 
 
 # 3rd party
@@ -12,9 +13,15 @@ from django.http.response import HttpResponse
 from django.shortcuts import render
 from django.views.generic import TemplateView, DetailView
 from django.views.generic.list import BaseListView
+from numpy import ERR_WARN
 
 # local
-from portal.forms import MeasurementUploadForm, FilterForm, ModelTrainForm, NewLinearRegssionModelForm, NewTestModelForm
+from portal.forms import (MeasurementUploadForm, 
+    FilterForm, 
+    ModelTrainForm, 
+    NewLinearRegssionModelForm, 
+    NewTestModelForm, 
+    CopyModelForm)
 from portal.models import Measurement, Model, Source, Prediction
 from portal.core import DATAHANDLERS, TESTMODELTYPE, LINEARREGRESSIONMODEL
 
@@ -192,7 +199,8 @@ class ModelsView(TemplateView, BaseListView):
         if not form.is_valid():
             return Result(False, "Data was not valid").render_view()
         
-        name: str = request.POST['name']
+        data = form.cleaned_data
+        name = data.get('name')
         if Model.objects.filter(name__exact=name).count() > 0:
             return Result(False, "Name already exists",
                         "Please go back and choose a different name").render_view()
@@ -210,7 +218,7 @@ class ModelsView(TemplateView, BaseListView):
         model.save()
         return Result(True, f"New model '{name}' created",
                       link_address=model.get_absolute_url(),
-                      link_text="See model details").render_view()
+                      link_text="Details of the new model").render_view()
 
 class ModelDetailView(DetailView):
     model = Model
@@ -219,6 +227,7 @@ class ModelDetailView(DetailView):
     def get_context_data(self, **kwargs):
         context = DetailView.get_context_data(self, **kwargs)
         context["train_form"] = ModelTrainForm(self._get_trainable_measurements())
+        context["copy_form"] = CopyModelForm()
         return context
 
     def _get_trainable_measurements(self) -> 'QuerySet':
@@ -235,7 +244,43 @@ class ModelDetailView(DetailView):
 
         return Measurement.objects.filter(pk__in=trainable_ids)
 
-    def post(self, request, *args, **kwargs):
+    def post(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
+        if 'copy_submit' in request.POST:
+            return self._post_copy(request)
+        if 'train_submit' in request.POST:
+            return self._post_train(request)
+
+    def _post_copy(self, request: HttpRequest) -> HttpResponse:
+        #validate        
+        form = CopyModelForm(request.POST)
+        if not form.is_valid():
+            return Result(False, "Data was not valid").render_view()
+        data = form.cleaned_data
+        new_name = data.get('new_name')
+        if Model.objects.filter(name__exact=new_name).count() > 0:
+            return Result(False, "Name already exists",
+                        "Please go back and choose a different name").render_view()
+        
+        # copy
+        model: Model = self.get_object()
+        new_model = Model()
+        new_model.name = new_name
+        new_model.user_created = request.user
+        new_model.user_changed = request.user
+        new_model.model_type = model.model_type
+        new_model.data = model.data
+        new_model.save()
+
+        if 'new_lreg_model_submit' in request.POST:    
+            model.data = LINEARREGRESSIONMODEL.default_data(int(request.POST['features']))
+        elif 'new_test_model_submit' in request.POST:
+            model.data = TESTMODELTYPE.default_data()
+        model.save() 
+        return Result(True, f"Copy '{new_name}' created",
+                      link_address=new_model.get_absolute_url(),
+                      link_text="Details of the copy").render_view()
+    
+    def _post_train(self, request: HttpRequest) -> HttpResponse:
         form = ModelTrainForm(self._get_trainable_measurements(), request.POST)
         if(form.is_valid()):
             data = form.cleaned_data

@@ -46,3 +46,6 @@ class NewLinearRegssionModelForm(forms.Form):
 
 class NewTestModelForm(forms.Form):
     name = forms.CharField(required=True)
+
+class CopyModelForm(forms.Form):
+    new_name = forms.CharField(required=True)
