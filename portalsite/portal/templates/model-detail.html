@@ -5,13 +5,42 @@
     <div class="mb-5 mt-5">
         <h1>Model details</h1>
         {% if perms.portal.view_model %}
-        <dl class="row">
+        <dl class="row mb-5">
             <dt class="col-sm-3">Name</dt>
             <dd class="col-sm-9">{{ object.name }}</dd>
 
             <dt class="col-sm-3">Type</dt>
             <dd class="col-sm-9">{{ object.model_type }}</dd>
+            <dt class="col-sm-3">Last changed</dt>
+            <dd class="col-sm-9">{{ object.time_created }} (by user '{{ object.user_created }}')</dd>
+            <dt class="col-sm-3">Created</dt>
+            <dd class="col-sm-9">{{ object.time_changed }} (by user '{{ object.user_changed }}')</dd>
+
+            <dt class="col-sm-3">Details</dt>
+            <dd class="col-sm-9">
+                <pre>{{ object.details_text}}</pre>
+            </dd>
         </dl>
+        <div class="row mb-5 mt-5">
+            <h3 class="col-sm-12">Copy the model</h3>
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <table>
+                    {{ copy_form }}
+                </table>
+                <button class="btn btn-outline-primary" type="submit" name="copy_submit">Copy</button>
+            </form>
+        </div>
+        <div class="row mb-5 mt-5">
+            <h3 class="col-sm-12">Train the model</h3>
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <table>
+                    {{ train_form }}
+                </table>
+                <button class="btn btn-outline-primary" type="submit" name="train_submit">Start training...</button>
+            </form>
+        </div>
         {% else %}
         <p>You don't have permission to view models.</p>
         {% endif %}

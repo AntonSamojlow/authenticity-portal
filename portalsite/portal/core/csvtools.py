@@ -1,10 +1,8 @@
 """Data parsers for uploaded measurements"""
 import csv
-import json
 
 from django.core.files.uploadedfile import UploadedFile
 from .dataclasses import CsvContent, ValidationResult
-
 
 class CsvParser:
     """Wrapper, combining django.core.files.uploadedfile with csv.DictReader"""
@@ -13,7 +11,7 @@ class CsvParser:
     def read(file: UploadedFile) -> CsvContent:
         """Read the uploaded file and return the content"""
         # validation
-        if(file.multiple_chunks()):
+        if file.multiple_chunks():
             raise Exception("File to large too handle (multiple_chunks expected)")
 
         # read data
@@ -36,13 +34,13 @@ class NumericCsvValidator:
             return False
 
     @classmethod
-    def validate(cls, csv: CsvContent) -> list[ValidationResult]:
-        header_count = len(csv.headers)
+    def validate(cls, csv_content: CsvContent) -> list[ValidationResult]:
+        header_count = len(csv_content.headers)
         results = []
 
-        # check headers have text and  not pure values
+        # check headers have text and not pure values
         float_headers = []
-        for header in csv.headers:
+        for header in csv_content.headers:
             if NumericCsvValidator.is_float(header):
                 float_headers.append(header)
         if len(float_headers) > 0:
@@ -50,8 +48,8 @@ class NumericCsvValidator:
                 details=f"Found {len(float_headers)} headers with numeric values: {','.join(float_headers)}"))
 
         # check all rows have float content
-        for row_nr in range(len(csv.rows)):
-            row = csv.rows[row_nr]
+        for row_nr in range(len(csv_content.rows)):
+            row = csv_content.rows[row_nr]
             if not isinstance(row, list):
                 results.append(ValidationResult(False, "Empty row",
                     details=f"Row {row_nr} has no data"))
@@ -65,6 +63,6 @@ class NumericCsvValidator:
                         # this should not happen, so we throw
                         raise Exception("Expected string - something really bad happened")
                     if not NumericCsvValidator.is_float(entry):
-                     results.append(ValidationResult(False, "Not a float",
+                        results.append(ValidationResult(False, "Not a float",
                             details=f"Row {row_nr}, column {column_nr}: Can not parse '{entry}' as float."))
         return results

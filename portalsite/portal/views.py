@@ -1,18 +1,35 @@
+# region imports
 # standard
+from typing import TYPE_CHECKING
 from datetime import datetime
 from dataclasses import dataclass
+from django import forms
+
 
 # 3rd party
+from django.core.paginator import Paginator
 from django.http.request import HttpRequest
 from django.http.response import HttpResponse
 from django.shortcuts import render
 from django.views.generic import TemplateView, DetailView
-from django.views.generic.list import BaseListView, ListView
+from django.views.generic.list import BaseListView
+from numpy import ERR_WARN
 
 # local
-from portal.forms import MeasurementUploadForm, MeasurementScoreForm
-from portal.models import DATAHANDLER_CHOICES, DATAHANDLERS, Measurement, Model, Scoring, Source
-from .core.data_handler import ValidationResult
+from portal.forms import (MeasurementUploadForm, 
+    FilterForm, 
+    ModelTrainForm, 
+    NewLinearRegssionModelForm, 
+    NewTestModelForm, 
+    CopyModelForm)
+from portal.models import Measurement, Model, Source, Prediction
+from portal.core import DATAHANDLERS, TESTMODELTYPE, LINEARREGRESSIONMODEL
+
+# type hints
+if TYPE_CHECKING:
+    from django.db.models.query import QuerySet
+# endregion
+
 
 def index(request: HttpRequest):
 
@@ -32,7 +49,6 @@ def index(request: HttpRequest):
 class MeasurementsView(TemplateView, BaseListView):
     model = Measurement
     template_name = 'measurements.html'
-    form_class = MeasurementUploadForm
 
     def __init__(self, **kwargs: any) -> None:
         super().__init__(**kwargs)
@@ -41,9 +57,9 @@ class MeasurementsView(TemplateView, BaseListView):
         self.object_list = self.model.objects.all()
 
     def get_context_data(self, **kwargs):
-        form = self.form_class(DATAHANDLER_CHOICES, self.source_choices, initial={
+        form = MeasurementUploadForm(DATAHANDLERS.choices, self.source_choices, initial={
             'measured': datetime.now(),
-            'data_handler': DATAHANDLER_CHOICES[0],
+            'data_handler': DATAHANDLERS.choices[0],
             'source': self.source_choices[0] if len(self.source_choices) > 0 else None,
             'file': None
         })
@@ -52,7 +68,7 @@ class MeasurementsView(TemplateView, BaseListView):
         return context
 
     def post(self, request, *args, **kwargs):
-        form = self.form_class(DATAHANDLER_CHOICES, self.source_choices, request.POST)
+        form = MeasurementUploadForm(DATAHANDLERS.choices, self.source_choices, request.POST)
         name_already_exists: bool = Measurement.objects.filter(
             name__exact=request.POST['name']).count() > 0
 
@@ -68,23 +84,27 @@ class MeasurementsView(TemplateView, BaseListView):
                           "Please go back and select a file to upload").render_view()
 
         data_handler = request.POST['data_handler']
+        try:
+            data = DATAHANDLERS.get(data_handler).load_from_file(request.FILES['file'])
+        except UnicodeDecodeError as decode_error:
+            return Result(False, "Unicode decoding error", details_formatted=str(decode_error)).render_view()
+        # except Exception as exc:
+        #     return Result(False, "Unhandled - failed to read", details_formatted=str(exc)).render_view()
         source = Source.objects.filter(id__exact=request.POST['source']).first()
 
         measurement = Measurement()
-        measurement.name = request.POST['name']
-        measurement.data = DATAHANDLERS[data_handler].load_from_file(request.FILES['file'])
+        measurement.data = data
         measurement.data_handler = data_handler
+        measurement.source = source
+        measurement.name = request.POST['name']
         measurement.time_measured = request.POST['measured']
         measurement.user_created = request.user
         measurement.user_changed = request.user
-        measurement.source = source
 
         validation_results = measurement.validate()
         if sum([0 if result.success else 1 for result in validation_results]) > 0:
-            return Result(False, "Validation failed",
-                details_formatted = "\n".join([f"{result.name}: {result.details}" for result in validation_results])
-            ).render_view()
-
+            return Result(False, "Validation failed", details_formatted="\n".join(
+                [f"{result.name}: {result.details}" for result in validation_results])).render_view()
 
         try:
             Measurement.save(measurement)
@@ -100,38 +120,58 @@ class MeasurementsView(TemplateView, BaseListView):
 class MeasurementDetailView(DetailView):
     model = Measurement
     template_name = 'measurement-detail.html'
-    form_class = MeasurementScoreForm
 
-    def __init__(self, **kwargs: any) -> None:
-        super().__init__(**kwargs)
-        # reload the choices
-        self.model_choices = [(d.id, d.name) for d in list(Model.objects.all())]
+    def _get_predict_choices(self) -> list[tuple[str, str]]:
+        measurement: Measurement = self.get_object()
+        choices = []
+        for m in Model.objects.all():
+            if m.is_compatible(measurement):
+                choices.append((m.id, m.name))
+        return choices
 
     def get_context_data(self, **kwargs):
         context = DetailView.get_context_data(self, **kwargs)
-        scores = Scoring.objects.filter(measurement__exact=self.get_object())
-        context["scores"] = scores
-        context["score_form"] = self.form_class(self.model_choices, initial={
-            'model': self.model_choices[0] if len(self.model_choices) > 0 else None,
-        })
+
+        model_id = FilterForm.ALL
+        if self.request.GET and 'model_filter' in self.request.GET:
+            model_id = self.request.GET.get('model_filter')
+        predictions: list[Prediction] = list(Prediction.objects.filter(measurement__exact=self.get_object()))    
+
+        filtered_predictions = []
+        if model_id == FilterForm.ALL:
+           filtered_predictions = predictions
+        else:
+            for p in predictions:
+                if p.model.id == int(model_id):
+                    filtered_predictions.append(p)
+        
+        context['model_filter'] = FilterForm(
+            'model_filter',
+            'model',
+            list(set((p.model.id, p.model.name)for p in predictions)),
+            initial=model_id,
+            includeAll=True)       
+        context['predictions_page'] = Paginator(filtered_predictions, 10).get_page(self.request.GET.get('page'))
+        context['predict_filter'] = FilterForm('predict_filter', 'model', self._get_predict_choices())
         return context
 
     def post(self, request, *args, **kwargs):
-        model: Model = Model.objects.filter(id__exact=request.POST['model']).first()
-        scoring = model.score(self.get_object())
-        print(scoring.value)
-        print(scoring.measurement)
-        print(scoring.model)
+        model: Model = Model.objects.filter(id__exact=request.POST['predict_filter']).first()
+        prediction = model.predict(self.get_object())
         try:
-            Scoring.save(scoring)
+            Prediction.save(prediction)
         except Exception as exc:
             # TODO: Replace this error by a generic one and write stacktrace only to log
             return Result(False, "Internal problem", str(exc)).render_view()
 
-        return Result(True, f"Computed score: {scoring.value}").render_view()
+        return Result(
+            True,
+            "Computed prediction",
+            f"Result:{prediction.result}\nScore:{prediction.score}"
+        ).render_view()
 
 
-class ModelsView(ListView):
+class ModelsView(TemplateView, BaseListView):
     model = Model
     template_name = 'models.html'
 
@@ -139,14 +179,143 @@ class ModelsView(ListView):
         super().__init__(**kwargs)
         self.object_list = self.model.objects.all()
 
-    def get_context_data(self, **kwargs):
-        context = ListView.get_context_data(self, **kwargs)
+
+    def get_context_data(self, **kwargs):        
+        context = BaseListView.get_context_data(self, **kwargs)
+        context['new_lreg_model_form'] = NewLinearRegssionModelForm()
+        context['new_test_model_form'] = NewTestModelForm()
         return context
 
+    def post(self, request : HttpRequest, *args, **kwargs):
+
+        if 'new_lreg_model_submit' in request.POST:
+            form = NewLinearRegssionModelForm(request.POST)
+            model_type = LINEARREGRESSIONMODEL
+        
+        elif 'new_test_model_submit' in request.POST:
+            form = NewTestModelForm(request.POST)
+            model_type = TESTMODELTYPE
+
+        if not form.is_valid():
+            return Result(False, "Data was not valid").render_view()
+        
+        data = form.cleaned_data
+        name = data.get('name')
+        if Model.objects.filter(name__exact=name).count() > 0:
+            return Result(False, "Name already exists",
+                        "Please go back and choose a different name").render_view()
+
+        model = Model()
+        model.name = name
+        model.user_created = request.user
+        model.user_changed = request.user
+        model.model_type = model_type.id_
+
+        if 'new_lreg_model_submit' in request.POST:    
+            model.data = LINEARREGRESSIONMODEL.default_data(int(request.POST['features']))
+        elif 'new_test_model_submit' in request.POST:
+            model.data = TESTMODELTYPE.default_data()
+        model.save()
+        return Result(True, f"New model '{name}' created",
+                      link_address=model.get_absolute_url(),
+                      link_text="Details of the new model").render_view()
 
 class ModelDetailView(DetailView):
     model = Model
     template_name = 'model-detail.html'
+
+    def get_context_data(self, **kwargs):
+        context = DetailView.get_context_data(self, **kwargs)
+        context["train_form"] = ModelTrainForm(self._get_trainable_measurements())
+        context["copy_form"] = CopyModelForm()
+        return context
+
+    def _get_trainable_measurements(self) -> 'QuerySet':
+        # TODO This is ahighly ineffecient way to gather all trainable measurements:
+        # 1. we walk through  Measurements twice: first retireving them, then just for generating a Queryset object
+        # - possible quick fix: use a MultipleChoiceField instaed and handle list of choices manually
+        # 2. the need to retrieve all measurements from db to check compatible is an even bigger design issue
+        # - need a stricter/better/more efficient way to figure out compatability just absed on a db fields (one query)
+        model: Model = self.get_object()
+        trainable_ids = []
+        for m in Measurement.objects.all():
+            if m.is_labelled and model.is_compatible(m):
+                trainable_ids.append(m.id)
+
+        return Measurement.objects.filter(pk__in=trainable_ids)
+
+    def post(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
+        if 'copy_submit' in request.POST:
+            return self._post_copy(request)
+        if 'train_submit' in request.POST:
+            return self._post_train(request)
+
+    def _post_copy(self, request: HttpRequest) -> HttpResponse:
+        #validate        
+        form = CopyModelForm(request.POST)
+        if not form.is_valid():
+            return Result(False, "Data was not valid").render_view()
+        data = form.cleaned_data
+        new_name = data.get('new_name')
+        if Model.objects.filter(name__exact=new_name).count() > 0:
+            return Result(False, "Name already exists",
+                        "Please go back and choose a different name").render_view()
+        
+        # copy
+        model: Model = self.get_object()
+        new_model = Model()
+        new_model.name = new_name
+        new_model.user_created = request.user
+        new_model.user_changed = request.user
+        new_model.model_type = model.model_type
+        new_model.data = model.data
+        new_model.save()
+
+        if 'new_lreg_model_submit' in request.POST:    
+            model.data = LINEARREGRESSIONMODEL.default_data(int(request.POST['features']))
+        elif 'new_test_model_submit' in request.POST:
+            model.data = TESTMODELTYPE.default_data()
+        model.save() 
+        return Result(True, f"Copy '{new_name}' created",
+                      link_address=new_model.get_absolute_url(),
+                      link_text="Details of the copy").render_view()
+    
+    def _post_train(self, request: HttpRequest) -> HttpResponse:
+        form = ModelTrainForm(self._get_trainable_measurements(), request.POST)
+        if(form.is_valid()):
+            data = form.cleaned_data
+            name = data.get('name')
+            if name and Model.objects.filter(name=name).count() > 0:
+                return Result(False, "Model already exists", "Please choose a different name").render_view()
+
+            measurements = list(data.get('measurements'))
+            model: Model = self.get_object()
+            old_score = sum([model.score(m).value for m in measurements])/len(measurements)
+            try:
+                trained_model_data, new_score = model.get_type.train(
+                    model,
+                    measurements,
+                    max_iterations=1,
+                    max_seconds=10)
+            except Exception as exc:
+                return Result(False, "Training failed", str(exc)).render_view()
+
+            operation_text = ""
+            if name:
+                Model(name=name,
+                      data=trained_model_data,
+                      user_created=request.user,
+                      user_changed=request.user,
+                      model_type=model.model_type).save()
+                operation_text = f"'{name}' was saved"
+            else:
+                model.data = trained_model_data
+                model.user_changed = request.user
+                model.save()
+                operation_text = f"'{model.name}' was updated"
+
+            return Result(True, "Training finished",
+                          f"score before: {old_score}\nscore after: {new_score}\n{operation_text}").render_view()
 
 
 @dataclass

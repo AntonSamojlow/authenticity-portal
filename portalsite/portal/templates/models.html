@@ -3,20 +3,47 @@
 {% block content %}
 <div>    
     <div class="mb-5 mt-5">
-        <h4>Models</h4>
+        <h4>Create models</h4>
+        {% if perms.portal.add_measurement %}
+        <div class="input-group p-3 d-flex justify-content-center m-3 border border-primary rounded">
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <table>
+                    {{ new_lreg_model_form }}
+                </table>
+                <button class="btn btn-outline-primary" type="submit" name="new_lreg_model_submit">New linear regression model</button>
+            </form>
+        </div>
+        <div class="input-group p-3 d-flex justify-content-center m-3 border border-primary rounded">
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <table>
+                    {{ new_test_model_form }}
+                </table>
+                <button class="btn btn-outline-primary" type="submit" name="new_test_model_submit">New test model</button>
+            </form>
+        </div>
+        {% else %}
+        <p>You don't have permission to add measurements.</p>
+        {% endif %}
+    </div>
+    <div class="mb-5 mt-5">
+        <h4>Existing Models</h4>
         {% if perms.portal.view_model %}
         <table class="table">
             <thead>
                 <tr>
                     <th scope="col">Name</th>
                     <th scope="col">Type</th>
+                    <th scope="col">Last changed</th>
                 </tr>
             </thead>
             <tbody>
                 {% for model in object_list %}
                 <tr>
                     <td scope="row"><a href="{{ model.get_absolute_url }}">{{ model.name }}</a></td>
-                    <td>{{ model.model_type }}</td>
+                    <td>{{ model.get_type.name }}</td>
+                    <td>{{ model.time_changed }} (by '{{ model.user_changed }}')</td>
                 </tr>
                 {% empty %}
                 <tr>
