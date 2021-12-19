@@ -1,4 +1,4 @@
-"""Data base model: Source"""
+"""Data base model: Group"""
 
 # region imports
 # standard
@@ -14,8 +14,8 @@ from django.urls import reverse
 # endregion
 
 
-class Label(models.Model):
-    """Label, used to classify objects. Holds a descriptive text."""
+class Group(models.Model):
+    """Group, used to classify objects. Holds a descriptive text."""
 
     name = models.CharField(unique=True, max_length=20)
     description = models.TextField()
@@ -25,4 +25,4 @@ class Label(models.Model):
 
     def get_absolute_url(self):
         """Returns the url to display the object."""
-        return reverse('label-detail', args=[str(self.id)])
+        return reverse('group-detail', args=[str(self.id)])

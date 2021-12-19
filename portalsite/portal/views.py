@@ -21,7 +21,7 @@ from portal.forms import (MeasurementUploadForm,
     NewLinearRegssionModelForm, 
     NewTestModelForm, 
     CopyModelForm)
-from portal.models import Measurement, Model, Source, Prediction, Label
+from portal.models import Measurement, Model, Source, Prediction, Group
 from portal.core import DATAHANDLERS, TESTMODELTYPE, LINEARREGRESSIONMODEL
 
 # type hints
@@ -53,39 +53,41 @@ class MeasurementsView(TemplateView, BaseListView):
         super().__init__(**kwargs)
         self.source_choices = list((d.id, d.name) for d in Source.objects.all())
         self.object_list = self.model.objects.all()
-        self.labels_chocies = list((l.id, l.name) for l in Label.objects.all())
+        self.groups_chocies = list((l.id, l.name) for l in Group.objects.all())
 
     def get_context_data(self, **kwargs):
-        form = MeasurementUploadForm(DATAHANDLERS.choices, self.source_choices, self.labels_chocies, initial={
+        form = MeasurementUploadForm(DATAHANDLERS.choices, self.source_choices, self.groups_chocies, initial={
             'measured': datetime.now(),
             'data_handler': DATAHANDLERS.choices[0],
             'source': self.source_choices[0] if len(self.source_choices) > 0 else None,
-            'labels': self.labels_chocies[0] if len(self.labels_chocies) > 0 else None,
+            'groups': self.groups_chocies[0] if len(self.groups_chocies) > 0 else None,
             'file': None
         })
 
-        label_id = FilterForm.ALL
-        if self.request.GET and 'label_filter' in self.request.GET:
-            label_id = self.request.GET.get('label_filter')
+        group_id = FilterForm.ALL
+        if self.request.GET and 'group_filter' in self.request.GET:
+            group_id = self.request.GET.get('group_filter')
         
-        if label_id == FilterForm.ALL:
+        if group_id == FilterForm.ALL:
             self.object_list = self.model.objects.all()
         else:
-            self.object_list = list(self.model.objects.filter(labels__id=label_id))    
+            self.object_list = list(self.model.objects.filter(groups__id=group_id))    
 
         context = BaseListView.get_context_data(self, **kwargs)
-       
-        context['label_filter'] = FilterForm(
-            'label_filter',
-            'label',
-            list((l.id, l.name) for l in Label.objects.all()),
-            initial=label_id,
+
+        context['group_filter'] = FilterForm(
+            'group_filter',
+            'group',
+            list((l.id, l.name) for l in Group.objects.all()),
+            initial=group_id,
             includeAll=True)       
         context["upload_form"] = form
+        context['measurements_page'] = Paginator(self.object_list, 10).get_page(self.request.GET.get('page'))
+        
         return context
 
     def post(self, request, *args, **kwargs):
-        form = MeasurementUploadForm(DATAHANDLERS.choices, self.source_choices, self.labels_chocies, request.POST)
+        form = MeasurementUploadForm(DATAHANDLERS.choices, self.source_choices, self.groups_chocies, request.POST)
         name_already_exists: bool = Measurement.objects.filter(
             name__exact=request.POST['name']).count() > 0
 
@@ -127,9 +129,9 @@ class MeasurementsView(TemplateView, BaseListView):
 
         try:
             Measurement.save(measurement)
-            if 'labels' in  form_data:
-                for label_id_string in form_data['labels']:
-                    measurement.labels.add(int(label_id_string))
+            if 'groups' in  form_data:
+                for group_id_string in form_data['groups']:
+                    measurement.groups.add(int(group_id_string))
         except Exception as exc:
             # TODO: Replace this error by a generic one and write stacktrace only to log
             return Result(False, "Internal problem", str(exc)).render_view()
@@ -205,6 +207,7 @@ class ModelsView(TemplateView, BaseListView):
         context = BaseListView.get_context_data(self, **kwargs)
         context['new_lreg_model_form'] = NewLinearRegssionModelForm()
         context['new_test_model_form'] = NewTestModelForm()
+        context['models_page'] = Paginator(self.object_list, 10).get_page(self.request.GET.get('page'))
         return context
 
     def post(self, request : HttpRequest, *args, **kwargs):
@@ -246,23 +249,23 @@ class ModelDetailView(DetailView):
     template_name = 'model-detail.html'
 
     def get_context_data(self, **kwargs):
-        label_id = FilterForm.ALL
-        if self.request.GET and 'label_filter' in self.request.GET:
-            label_id = self.request.GET.get('label_filter')
+        group_id = FilterForm.ALL
+        if self.request.GET and 'group_filter' in self.request.GET:
+            group_id = self.request.GET.get('group_filter')
      
         context = DetailView.get_context_data(self, **kwargs)
        
-        context['label_filter'] = FilterForm(
-            'label_filter',
-            'label',
-            list((l.id, l.name) for l in Label.objects.all()),
-            initial=label_id,
+        context['group_filter'] = FilterForm(
+            'group_filter',
+            'group',
+            list((l.id, l.name) for l in Group.objects.all()),
+            initial=group_id,
             includeAll=True)       
-        context["train_form"] = ModelTrainForm(self._get_trainable_measurements(label_id))
+        context["train_form"] = ModelTrainForm(self._get_trainable_measurements(group_id))
         context["copy_form"] = CopyModelForm()
         return context
 
-    def _get_trainable_measurements(self, label_id : str) -> 'QuerySet':
+    def _get_trainable_measurements(self, group_id : str) -> 'QuerySet':
         # TODO This is ahighly ineffecient way to gather all trainable measurements:
         # 1. we walk through  Measurements twice: first retireving them, then just for generating a Queryset object
         # - possible quick fix: use a MultipleChoiceField instaed and handle list of choices manually
@@ -270,10 +273,10 @@ class ModelDetailView(DetailView):
         # - need a stricter/better/more efficient way to figure out compatability just absed on a db fields (one query)
         model: Model = self.get_object()
         trainable_ids = []
-        if label_id == FilterForm.ALL:
+        if group_id == FilterForm.ALL:
             filtered_measurements =  Measurement.objects.all()
         else:
-            filtered_measurements = Measurement.objects.filter(labels__id=label_id)
+            filtered_measurements = Measurement.objects.filter(groups__id=group_id)
 
         for m in filtered_measurements:
             if m.is_labelled and model.is_compatible(m):
