@@ -20,13 +20,17 @@
     </div>
 
     <div class="mb-5 mt-5">
-        <h4>Existing measurements</h4>
+        <h4>Measurements</h4>
         {% if perms.portal.view_measurement %}
+        <form class="col-sm-12" method="get" enctype="multipart/form-data">
+            <button class="btn btn-outline-primary" type="submit">Filter by</button>
+            {{ label_filter }}
+        </form>
         <table class="table">
             <thead>
                 <tr>
                     <th scope="col">Name</th>
-                    <th scope="col">Data handler</th>
+                    <th scope="col">Labels</th>
                     <th scope="col">Measured</th>
                     <th scope="col">Source</th>
                     <th scope="col">Uploaded</th>
@@ -36,7 +40,7 @@
                 {% for measurement in object_list %}
                 <tr>
                     <td scope="row"><a href="{{ measurement.get_absolute_url }}">{{ measurement.name }}</a></td>
-                    <td>{{ measurement.data_handler }}</td>
+                    <td>{{ measurement.labels_as_short_text }}</td>
                     <td>{{ measurement.time_measured }}</td>
                     <td>{{ measurement.source }}</td>
                     <td>{{ measurement.time_created }} (by '{{ measurement.user_created }}')</td>

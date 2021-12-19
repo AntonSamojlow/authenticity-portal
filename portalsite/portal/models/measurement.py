@@ -13,6 +13,7 @@ from numpy import ndarray
 # local
 from portal.core import DATAHANDLERS
 from .source import Source
+from .label import Label
 
 # type hints
 if TYPE_CHECKING:    
@@ -35,6 +36,8 @@ class Measurement(models.Model):
         blank=True)
     time_measured = models.DateTimeField(
         help_text="time the data was measured")
+
+    labels = models.ManyToManyField(Label)
 
     # change tracking attributes
     time_created = models.DateTimeField(auto_now_add=True, help_text="fist time this measurement was saved to database")
@@ -65,6 +68,11 @@ class Measurement(models.Model):
     @property
     def is_labelled(self) -> bool:
         return not self.model_target is None
+    
+    # this is a not very elegant short cut - the langth parameter should really be controlled in the view
+    @property
+    def labels_as_short_text(self) -> str:
+        return self.labels_as_text(42)
 
     class Meta:
         ordering = ['time_created']
@@ -75,6 +83,13 @@ class Measurement(models.Model):
     def get_absolute_url(self) -> str:
         """Returns the url to display the object."""
         return reverse('measurement-detail', args=[str(self.id)])
+
+    def labels_as_text(self, max_length : int = None) -> str:
+        """Returns a comma separated string of label names, truncated if specified."""
+        text = ", ".join([l.name for l in  self.labels.all()])
+        if max_length is not None and len(text) > max_length:
+            text = text[: max(1,max_length-3)] + "..."
+        return text
 
     # shortcuts via data handler
     def as_displaytext(self) -> str:

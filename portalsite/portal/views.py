@@ -9,11 +9,10 @@ from django import forms
 # 3rd party
 from django.core.paginator import Paginator
 from django.http.request import HttpRequest
-from django.http.response import HttpResponse
+from django.http.response import FileResponse, HttpResponse
 from django.shortcuts import render
 from django.views.generic import TemplateView, DetailView
 from django.views.generic.list import BaseListView
-from numpy import ERR_WARN
 
 # local
 from portal.forms import (MeasurementUploadForm, 
@@ -22,7 +21,7 @@ from portal.forms import (MeasurementUploadForm,
     NewLinearRegssionModelForm, 
     NewTestModelForm, 
     CopyModelForm)
-from portal.models import Measurement, Model, Source, Prediction
+from portal.models import Measurement, Model, Source, Prediction, Label
 from portal.core import DATAHANDLERS, TESTMODELTYPE, LINEARREGRESSIONMODEL
 
 # type hints
@@ -52,28 +51,48 @@ class MeasurementsView(TemplateView, BaseListView):
 
     def __init__(self, **kwargs: any) -> None:
         super().__init__(**kwargs)
-        # reload the choices
-        self.source_choices = [(d.id, d.name) for d in list(Source.objects.all())]
+        self.source_choices = list((d.id, d.name) for d in Source.objects.all())
         self.object_list = self.model.objects.all()
+        self.labels_chocies = list((l.id, l.name) for l in Label.objects.all())
 
     def get_context_data(self, **kwargs):
-        form = MeasurementUploadForm(DATAHANDLERS.choices, self.source_choices, initial={
+        form = MeasurementUploadForm(DATAHANDLERS.choices, self.source_choices, self.labels_chocies, initial={
             'measured': datetime.now(),
             'data_handler': DATAHANDLERS.choices[0],
             'source': self.source_choices[0] if len(self.source_choices) > 0 else None,
+            'labels': self.labels_chocies[0] if len(self.labels_chocies) > 0 else None,
             'file': None
         })
+
+        label_id = FilterForm.ALL
+        if self.request.GET and 'label_filter' in self.request.GET:
+            label_id = self.request.GET.get('label_filter')
+        
+        if label_id == FilterForm.ALL:
+            self.object_list = self.model.objects.all()
+        else:
+            self.object_list = list(self.model.objects.filter(labels__id=label_id))    
+
         context = BaseListView.get_context_data(self, **kwargs)
+       
+        context['label_filter'] = FilterForm(
+            'label_filter',
+            'label',
+            list((l.id, l.name) for l in Label.objects.all()),
+            initial=label_id,
+            includeAll=True)       
         context["upload_form"] = form
         return context
 
     def post(self, request, *args, **kwargs):
-        form = MeasurementUploadForm(DATAHANDLERS.choices, self.source_choices, request.POST)
+        form = MeasurementUploadForm(DATAHANDLERS.choices, self.source_choices, self.labels_chocies, request.POST)
         name_already_exists: bool = Measurement.objects.filter(
             name__exact=request.POST['name']).count() > 0
 
         if not form.is_valid():
             return Result(False, "Data was not valid").render_view()
+
+        form_data = form.cleaned_data
 
         if name_already_exists:
             return Result(False, "Name already exists",
@@ -83,21 +102,21 @@ class MeasurementsView(TemplateView, BaseListView):
             return Result(False, "No file selected",
                           "Please go back and select a file to upload").render_view()
 
-        data_handler = request.POST['data_handler']
+        data_handler = form_data['data_handler']
         try:
             data = DATAHANDLERS.get(data_handler).load_from_file(request.FILES['file'])
         except UnicodeDecodeError as decode_error:
             return Result(False, "Unicode decoding error", details_formatted=str(decode_error)).render_view()
         # except Exception as exc:
         #     return Result(False, "Unhandled - failed to read", details_formatted=str(exc)).render_view()
-        source = Source.objects.filter(id__exact=request.POST['source']).first()
+        source = Source.objects.filter(id__exact=form_data['source']).first()
 
         measurement = Measurement()
         measurement.data = data
         measurement.data_handler = data_handler
-        measurement.source = source
-        measurement.name = request.POST['name']
-        measurement.time_measured = request.POST['measured']
+        measurement.source = source        
+        measurement.name = form_data['name']
+        measurement.time_measured = form_data['measured']
         measurement.user_created = request.user
         measurement.user_changed = request.user
 
@@ -108,6 +127,9 @@ class MeasurementsView(TemplateView, BaseListView):
 
         try:
             Measurement.save(measurement)
+            if 'labels' in  form_data:
+                for label_id_string in form_data['labels']:
+                    measurement.labels.add(int(label_id_string))
         except Exception as exc:
             # TODO: Replace this error by a generic one and write stacktrace only to log
             return Result(False, "Internal problem", str(exc)).render_view()
@@ -170,7 +192,6 @@ class MeasurementDetailView(DetailView):
             f"Result:{prediction.result}\nScore:{prediction.score}"
         ).render_view()
 
-
 class ModelsView(TemplateView, BaseListView):
     model = Model
     template_name = 'models.html'
@@ -225,12 +246,23 @@ class ModelDetailView(DetailView):
     template_name = 'model-detail.html'
 
     def get_context_data(self, **kwargs):
+        label_id = FilterForm.ALL
+        if self.request.GET and 'label_filter' in self.request.GET:
+            label_id = self.request.GET.get('label_filter')
+     
         context = DetailView.get_context_data(self, **kwargs)
-        context["train_form"] = ModelTrainForm(self._get_trainable_measurements())
+       
+        context['label_filter'] = FilterForm(
+            'label_filter',
+            'label',
+            list((l.id, l.name) for l in Label.objects.all()),
+            initial=label_id,
+            includeAll=True)       
+        context["train_form"] = ModelTrainForm(self._get_trainable_measurements(label_id))
         context["copy_form"] = CopyModelForm()
         return context
 
-    def _get_trainable_measurements(self) -> 'QuerySet':
+    def _get_trainable_measurements(self, label_id : str) -> 'QuerySet':
         # TODO This is ahighly ineffecient way to gather all trainable measurements:
         # 1. we walk through  Measurements twice: first retireving them, then just for generating a Queryset object
         # - possible quick fix: use a MultipleChoiceField instaed and handle list of choices manually
@@ -238,7 +270,12 @@ class ModelDetailView(DetailView):
         # - need a stricter/better/more efficient way to figure out compatability just absed on a db fields (one query)
         model: Model = self.get_object()
         trainable_ids = []
-        for m in Measurement.objects.all():
+        if label_id == FilterForm.ALL:
+            filtered_measurements =  Measurement.objects.all()
+        else:
+            filtered_measurements = Measurement.objects.filter(labels__id=label_id)
+
+        for m in filtered_measurements:
             if m.is_labelled and model.is_compatible(m):
                 trainable_ids.append(m.id)
 

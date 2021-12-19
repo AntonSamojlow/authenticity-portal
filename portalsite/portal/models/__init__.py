@@ -1,3 +1,4 @@
+from .label import Label
 from .measurement import Measurement
 from .model import Model
 from .scoring import Scoring
