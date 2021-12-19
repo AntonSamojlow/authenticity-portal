@@ -1,6 +1,6 @@
 # region imports
 # standard
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from datetime import datetime
 from dataclasses import dataclass
 from django import forms
@@ -31,19 +31,7 @@ if TYPE_CHECKING:
 
 
 def index(request: HttpRequest):
-
-    date_time_format = "%d-%m-%Y, %H:%M:%S"
-
-    first_visit_time = request.session.get('first_visit_time', None)
-    if first_visit_time is None:
-        first_visit_time = datetime.now().strftime(date_time_format)
-        request.session['first_visit_time'] = first_visit_time
-    context = {
-        'request_time': datetime.now().strftime(date_time_format),
-        'first_visit_time': first_visit_time,
-    }
-    return render(request, 'index.html', context=context)
-
+    return render(request, 'index.html', context={})
 
 class MeasurementsView(TemplateView, BaseListView):
     model = Measurement
@@ -356,6 +344,17 @@ class ModelDetailView(DetailView):
 
             return Result(True, "Training finished",
                           f"score before: {old_score}\nscore after: {new_score}\n{operation_text}").render_view()
+
+
+class TopicView(TemplateView):
+    template_name = 'topic.html'
+
+    def get_context_data(self, topic, **kwargs: any) -> dict[str, any]:
+        context = TemplateView.get_context_data(self, **kwargs)
+
+        context['title'] = str.upper(topic[0]) + topic[1:]
+        return context
+        
 
 
 @dataclass
