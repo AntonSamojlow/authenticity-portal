@@ -253,7 +253,7 @@ class ModelDetailView(DetailView):
         context["copy_form"] = CopyModelForm()
         return context
 
-    def _get_trainable_measurements(self, group_id : str) -> 'QuerySet':
+    def _get_trainable_measurements(self, group_id : str = FilterForm.ALL) -> 'QuerySet':
         # TODO This is ahighly ineffecient way to gather all trainable measurements:
         # 1. we walk through  Measurements twice: first retireving them, then just for generating a Queryset object
         # - possible quick fix: use a MultipleChoiceField instaed and handle list of choices manually
