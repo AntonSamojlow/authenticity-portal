@@ -3,8 +3,8 @@
 {% block content %}
 <div>    
     <div class="mb-5 mt-5">
-        <h4>Create models</h4>
-        {% if perms.portal.add_measurement %}
+        <h4>Create new models</h4>
+        {% if perms.portal.add_model %}
         <div class="input-group p-3 d-flex justify-content-center m-3 border border-primary rounded">
             <form method="post" enctype="multipart/form-data">
                 {% csrf_token %}
@@ -24,14 +24,41 @@
             </form>
         </div>
         {% else %}
-        <p>You don't have permission to add measurements.</p>
+        <p>You don't have permission to add models.</p>
         {% endif %}
     </div>
     <div class="mb-5 mt-5">
-        <h4>Existing Models</h4>
+        <h4>Models</h4>
         {% if perms.portal.view_model %}
         <table class="table">
             <thead>
+                <tr colspan="4">
+                    <div class="pagination ">
+                        {% if models_page.paginator.num_pages > 1 %}
+                        <span class="step-links">
+                            {% if models_page.has_previous %}
+                            <a href="?page=1">&laquo; first</a>
+                            <a href="?page={{ models_page.previous_page_number }}">previous</a>
+                            {% else %}
+                            <a>&laquo; first</a>
+                            <a>previous</a>
+                            {% endif %}
+
+                            <span class="current"> | Page {{ models_page.number }} of
+                                {{ models_page.paginator.num_pages }} |
+                            </span>
+
+                            {% if models_page.has_next %}
+                            <a href="?page={{ models_page.next_page_number }}">next</a>
+                            <a href="?page={{ models_page.paginator.num_pages }}">last &raquo;</a>
+                            {% else %}
+                            <a>next</a>
+                            <a>last &raquo;</a>
+                            {% endif %}
+                        </span>
+                        {% endif %}
+                    </div>
+                </tr>
                 <tr>
                     <th scope="col">Name</th>
                     <th scope="col">Type</th>
@@ -39,7 +66,7 @@
                 </tr>
             </thead>
             <tbody>
-                {% for model in object_list %}
+                {% for model in models_page %}
                 <tr>
                     <td scope="row"><a href="{{ model.get_absolute_url }}">{{ model.name }}</a></td>
                     <td>{{ model.get_type.name }}</td>

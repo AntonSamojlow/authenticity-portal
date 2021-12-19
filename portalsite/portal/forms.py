@@ -2,15 +2,22 @@ from typing import TYPE_CHECKING
 from django import forms
 
 class MeasurementUploadForm(forms.Form):
-    def __init__(self, data_handler_choices: list, source_choices: list, *args, **kwargs) -> None:
+    def __init__(self, 
+    data_handler_choices: list, 
+    source_choices: list,
+    groups_choices: list,
+    *args, 
+    **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.fields['data_handler'].choices = data_handler_choices
         self.fields['source'].choices = source_choices
+        self.fields['groups'].choices = groups_choices
 
     measured = forms.DateTimeField()
     name = forms.CharField(max_length=50, required=True)
     data_handler = forms.ChoiceField()
     source = forms.ChoiceField()
+    groups = forms.MultipleChoiceField(required=False)
     file = forms.FileField(required=False)
 
 class FilterForm(forms.Form):

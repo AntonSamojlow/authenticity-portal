@@ -9,6 +9,9 @@
             <dt class="col-sm-3">Name</dt>
             <dd class="col-sm-9">{{ object.name }}</dd>
 
+            <dt class="col-sm-3">Groups</dt>
+            <dd class="col-sm-9">{{ object.groups_as_text }}</dd>
+
             <dt class="col-sm-3">Data handler</dt>
             <dd class="col-sm-9">{{ object.data_handler }}</dd>
 
@@ -110,10 +113,13 @@
             <dd class="col-sm-9">
                 <pre>{{ object.model_input }}</pre>
             </dd>
+
+            <!-- FOR NOW - WE DONT SHOW RAW DATA HERE
             <dt class="col-sm-3">Raw data</dt>
             <dd class="col-sm-9">
                 <pre>{{ object.as_displaytext }}</pre>
-            </dd>
+            </dd> -->
+            
             {% endif %}
         </dl>
         {% else %}
