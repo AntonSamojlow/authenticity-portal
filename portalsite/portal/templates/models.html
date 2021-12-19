@@ -4,7 +4,7 @@
 <div>    
     <div class="mb-5 mt-5">
         <h4>Create new models</h4>
-        {% if perms.portal.add_measurement %}
+        {% if perms.portal.add_model %}
         <div class="input-group p-3 d-flex justify-content-center m-3 border border-primary rounded">
             <form method="post" enctype="multipart/form-data">
                 {% csrf_token %}
