@@ -313,6 +313,17 @@ class ModelDetailView(DetailView):
         if(form.is_valid()):
             data = form.cleaned_data
             name = data.get('name')
+
+            print(request.user)
+            print(request.user.get_all_permissions())
+            if name.isspace(): name = None 
+
+            if name and not request.user.has_perm('portal.add_model'):
+                return Result(False, "Not allowed", "You do not have the rights to create new models").render_view()
+            
+            if not name and not request.user.has_perm('portal.change_model'):
+                return Result(False, "Not allowed", "You do not have the rights to change existing models").render_view()
+
             if name and Model.objects.filter(name=name).count() > 0:
                 return Result(False, "Model already exists", "Please choose a different name").render_view()
 
