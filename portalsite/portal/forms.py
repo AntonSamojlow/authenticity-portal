@@ -48,8 +48,17 @@ class NewTestModelForm(forms.Form):
     name = forms.CharField(required=True)
 
 class NewSimcaModelForm(forms.Form):
+    def __init__(self, limit_type_choices: list, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        self.fields['limit_type'].choices = limit_type_choices
+
     name = forms.CharField(required=True)
-    features = forms.IntegerField(min_value=1, required=True)  
+    features = forms.IntegerField(min_value=2, required=True)  
+    components = forms.IntegerField(min_value=1, required=True)  
+    alpha = forms.FloatField(min_value=0, max_value=1, initial=0.05, required=True)  
+    gamma = forms.FloatField(min_value=0, max_value=1, initial=0.01, required=True)  
+    limit_type = forms.ChoiceField()  
+    scale = forms.BooleanField(required=False, initial=False)  
 
 class CopyModelForm(forms.Form):
     new_name = forms.CharField(required=True)

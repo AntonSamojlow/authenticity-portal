@@ -30,6 +30,8 @@ class SimcaModel(ModelType):
 
     __instance_id = "Simca"
 
+    LIMITTYPE_CHOICES = [(limit.value , limit.name) for limit in LimitType]
+
     @property
     def id_(self) -> str:
         """Identifier used in internal dictionaries - maximal length 10"""
@@ -107,8 +109,9 @@ class SimcaModel(ModelType):
         score = sum(self.score(new_class,m) for m in measurements) / len(measurements)
         return (self.__get_model_data(simca_current), score)
 
-    def default_data(self, nr_features: int) -> ModelStorageType:
+    def default_data(self,
+         nr_features: int = 2,
+         parameters: SimcaParameters = SimcaParameters(0.05, 0.01, 3, LimitType.DDMOMENTS, False)) -> ModelStorageType:
         """Returns the data corresponding to a default (trivial) model"""
-        parameters = SimcaParameters(0.05, 0.01, 3, LimitType.DDROBUST, False)
-        data_tivial = np.zeros(shape=[2,nr_features])
+        data_tivial = np.zeros(shape=[parameters.n_comp,nr_features])
         return self.__get_model_data(Simca.generate(data_tivial, parameters))

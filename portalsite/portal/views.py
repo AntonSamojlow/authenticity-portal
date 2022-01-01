@@ -24,6 +24,7 @@ from portal.forms import (MeasurementUploadForm,
     CopyModelForm)
 from portal.models import Measurement, Model, Source, Prediction
 from portal.core import DATAHANDLERS, SIMCAMODEL, TESTMODELTYPE, LINEARREGRESSIONMODEL
+from portal.core.model_type.simca.simca import SimcaParameters, LimitType
 
 # type hints
 if TYPE_CHECKING:
@@ -184,7 +185,7 @@ class ModelsView(TemplateView, BaseListView):
         context = BaseListView.get_context_data(self, **kwargs)
         context['new_lreg_model_form'] = NewLinearRegssionModelForm()
         context['new_test_model_form'] = NewTestModelForm()
-        context['new_simca_model_form'] = NewSimcaModelForm()
+        context['new_simca_model_form'] = NewSimcaModelForm(SIMCAMODEL.LIMITTYPE_CHOICES)
         return context
 
     def post(self, request : HttpRequest, *args, **kwargs):
@@ -198,7 +199,7 @@ class ModelsView(TemplateView, BaseListView):
             model_type = TESTMODELTYPE
         
         elif 'new_simca_model_submit' in request.POST:
-            form = NewSimcaModelForm(request.POST)
+            form = NewSimcaModelForm(SIMCAMODEL.LIMITTYPE_CHOICES, request.POST)
             model_type = SIMCAMODEL
 
         if not form.is_valid():
@@ -221,7 +222,16 @@ class ModelsView(TemplateView, BaseListView):
         elif 'new_test_model_submit' in request.POST:
             model.data = TESTMODELTYPE.default_data()
         elif 'new_simca_model_submit' in request.POST:
-            model.data = SIMCAMODEL.default_data(int(request.POST['features']))
+            print(request.POST)
+            parameters = SimcaParameters(
+                float(request.POST['alpha']),
+                float(request.POST['gamma']),
+                int(request.POST['components']),
+                LimitType(int(request.POST['limit_type'])),
+                bool('scale' in request.POST and request.POST['scale']),
+            )
+            model.data = SIMCAMODEL.default_data(int(request.POST['features']),
+                parameters=parameters)
 
         model.save()
         return Result(True, f"New model '{name}' created",
