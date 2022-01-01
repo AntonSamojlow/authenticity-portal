@@ -19,11 +19,11 @@ from numpy import ERR_WARN
 from portal.forms import (MeasurementUploadForm, 
     FilterForm, 
     ModelTrainForm, 
-    NewLinearRegssionModelForm, 
+    NewLinearRegssionModelForm, NewSimcaModelForm, 
     NewTestModelForm, 
     CopyModelForm)
 from portal.models import Measurement, Model, Source, Prediction
-from portal.core import DATAHANDLERS, TESTMODELTYPE, LINEARREGRESSIONMODEL
+from portal.core import DATAHANDLERS, SIMCAMODEL, TESTMODELTYPE, LINEARREGRESSIONMODEL
 
 # type hints
 if TYPE_CHECKING:
@@ -184,6 +184,7 @@ class ModelsView(TemplateView, BaseListView):
         context = BaseListView.get_context_data(self, **kwargs)
         context['new_lreg_model_form'] = NewLinearRegssionModelForm()
         context['new_test_model_form'] = NewTestModelForm()
+        context['new_simca_model_form'] = NewSimcaModelForm()
         return context
 
     def post(self, request : HttpRequest, *args, **kwargs):
@@ -195,6 +196,10 @@ class ModelsView(TemplateView, BaseListView):
         elif 'new_test_model_submit' in request.POST:
             form = NewTestModelForm(request.POST)
             model_type = TESTMODELTYPE
+        
+        elif 'new_simca_model_submit' in request.POST:
+            form = NewSimcaModelForm(request.POST)
+            model_type = SIMCAMODEL
 
         if not form.is_valid():
             return Result(False, "Data was not valid").render_view()
@@ -215,6 +220,9 @@ class ModelsView(TemplateView, BaseListView):
             model.data = LINEARREGRESSIONMODEL.default_data(int(request.POST['features']))
         elif 'new_test_model_submit' in request.POST:
             model.data = TESTMODELTYPE.default_data()
+        elif 'new_simca_model_submit' in request.POST:
+            model.data = SIMCAMODEL.default_data(int(request.POST['features']))
+
         model.save()
         return Result(True, f"New model '{name}' created",
                       link_address=model.get_absolute_url(),

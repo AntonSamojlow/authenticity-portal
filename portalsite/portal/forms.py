@@ -47,5 +47,9 @@ class NewLinearRegssionModelForm(forms.Form):
 class NewTestModelForm(forms.Form):
     name = forms.CharField(required=True)
 
+class NewSimcaModelForm(forms.Form):
+    name = forms.CharField(required=True)
+    features = forms.IntegerField(min_value=1, required=True)  
+
 class CopyModelForm(forms.Form):
     new_name = forms.CharField(required=True)

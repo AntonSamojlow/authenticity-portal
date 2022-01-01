@@ -14,13 +14,22 @@
                 <button class="btn btn-outline-primary" type="submit" name="new_lreg_model_submit">New linear regression model</button>
             </form>
         </div>
-        <div class="input-group p-3 d-flex justify-content-center m-3 border border-primary rounded">
+        <!-- <div class="input-group p-3 d-flex justify-content-center m-3 border border-primary rounded">
             <form method="post" enctype="multipart/form-data">
                 {% csrf_token %}
                 <table>
                     {{ new_test_model_form }}
                 </table>
                 <button class="btn btn-outline-primary" type="submit" name="new_test_model_submit">New test model</button>
+            </form>
+        </div> -->
+        <div class="input-group p-3 d-flex justify-content-center m-3 border border-primary rounded">
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <table>
+                    {{ new_simca_model_form }}
+                </table>
+                <button class="btn btn-outline-primary" type="submit" name="new_simca_model_submit">New SIMCA model</button>
             </form>
         </div>
         {% else %}
