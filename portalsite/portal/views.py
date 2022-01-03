@@ -222,7 +222,6 @@ class ModelsView(TemplateView, BaseListView):
         elif 'new_test_model_submit' in request.POST:
             model.data = TESTMODELTYPE.default_data()
         elif 'new_simca_model_submit' in request.POST:
-            print(request.POST)
             parameters = SimcaParameters(
                 float(request.POST['alpha']),
                 float(request.POST['gamma']),
@@ -316,6 +315,7 @@ class ModelDetailView(DetailView):
                     max_iterations=1,
                     max_seconds=10)
             except Exception as exc:
+                raise exc
                 return Result(False, "Training failed", str(exc)).render_view()
 
             operation_text = ""

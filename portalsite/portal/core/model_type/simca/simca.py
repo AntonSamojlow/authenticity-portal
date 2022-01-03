@@ -131,6 +131,24 @@ class Simca:
             preprocessed /= self.preprocessing_std
         return preprocessed
             
+    def score(self, matrix: np.ndarray, target_values: np.ndarray, components: int = None) -> float:
+        """
+        Predicts the matrix and returns the score:= 1 - average(target - predicted)
+
+        Arguments:
+            - matrix (ndarray): Data matrix to predict
+            - matrix (ndarray): Vector of target values to predict
+            - components (int): Number of components to be used for the prediction. 
+            If set to None, the value is read from simca parameters.
+        """
+        if components is None:
+            components = self.parameters.n_comp
+        
+        if (components < 0 or components > self.parameters.n_comp):
+            raise ValueError("chosen comp_nr is invalid or incompatible with the model")
+        
+        predictions = self.predict(matrix, components)
+        return float(1.0 - np.mean(np.abs(target_values - predictions)))
 
 
    

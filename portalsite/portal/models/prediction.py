@@ -29,7 +29,7 @@ class Prediction(models.Model):
 
     @property
     def result_truncated_text(self):
-        text = self.result
+        text = str(self.result)
         if len(text) > 100:
             return text[:97] + "..."
         return text

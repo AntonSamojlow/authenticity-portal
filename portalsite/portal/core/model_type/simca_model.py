@@ -80,13 +80,12 @@ class SimcaModel(ModelType):
 
     def score(self, model: 'Model', measurement: 'Measurement') -> float:
         """Returns a models score, evaluated against a _labelled_ measurement (throws/undefined if unlabelled)"""
-        simca : Simca = self.__load_model(self, model)
-        predictions = simca.predict(measurement.model_input())
-        return float(1.0 - np.mean(np.abs(predictions - measurement.model_target())))
+        simca : Simca = self.__load_model(model)
+        return simca.score(measurement.model_input(), measurement.model_target())
 
     def predict(self, model: 'Model', measurement: 'Measurement') -> np.ndarray:
         """Returns a models prediction of a measurement"""
-        simca : Simca = self.__load_model(self, model)
+        simca : Simca = self.__load_model(model)
         return simca.predict(measurement.model_input())
 
     def train(self,
@@ -98,16 +97,16 @@ class SimcaModel(ModelType):
         X_concat: np.ndarray = np.concatenate([m.model_input() for m in measurements], axis=0)
         y_concat: np.ndarray = np.concatenate([m.model_target() for m in measurements], axis=0)
         
-        one_class_indices: np.ndarray = np.argwhere(np.ones(shape=y_concat.shape) - y_concat)
-        X_one_class = X_concat[one_class_indices]  
+        one_class_indices: np.ndarray = np.argwhere(np.where(y_concat == 1.0, y_concat, 0.0 )).flatten()
+        X_one_class = X_concat[one_class_indices,:]  
 
         # generate new model with old parameters but new data
         simca_current = self.__load_model(model)
         simca_new = Simca.generate(X_one_class, simca_current.parameters)
         
         # score it
-        score = sum(self.score(new_class,m) for m in measurements) / len(measurements)
-        return (self.__get_model_data(simca_current), score)
+        score = sum(simca_new.score(m.model_input(), m.model_target()) for m in measurements) / len(measurements)
+        return (self.__get_model_data(simca_new), score)
 
     def default_data(self,
          nr_features: int = 2,
