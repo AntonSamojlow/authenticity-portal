@@ -23,6 +23,7 @@
         </dl>
         <div class="row mb-5 mt-5">
             <h3 class="col-sm-12">Copy the model</h3>
+            {% if perms.portal.add_model %}
             <form method="post" enctype="multipart/form-data">
                 {% csrf_token %}
                 <table>
@@ -30,16 +31,27 @@
                 </table>
                 <button class="btn btn-outline-primary" type="submit" name="copy_submit">Copy</button>
             </form>
+            {% else %}
+            <p>You don't have permission to add models.</p>
+            {% endif %}
         </div>
         <div class="row mb-5 mt-5">
             <h3 class="col-sm-12">Train the model</h3>
+            {% if perms.portal.add_model or perms.portal.change_model %}
+            <form class="col-sm-12" method="get" enctype="multipart/form-data">
+                <button class="btn btn-outline-primary" type="submit">Filter by</button>
+                {{ group_filter }}
+            </form>
             <form method="post" enctype="multipart/form-data">
                 {% csrf_token %}
-                <table>
+                    <table>
                     {{ train_form }}
                 </table>
                 <button class="btn btn-outline-primary" type="submit" name="train_submit">Start training...</button>
             </form>
+            {% else %}
+            <p>You don't have permission to add or change models.</p>
+            {% endif %}
         </div>
         {% else %}
         <p>You don't have permission to view models.</p>

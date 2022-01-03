@@ -1,6 +1,6 @@
 # region imports
 # standard
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from datetime import datetime
 from dataclasses import dataclass
 from django import forms
@@ -9,11 +9,10 @@ from django import forms
 # 3rd party
 from django.core.paginator import Paginator
 from django.http.request import HttpRequest
-from django.http.response import HttpResponse
+from django.http.response import FileResponse, HttpResponse
 from django.shortcuts import render
 from django.views.generic import TemplateView, DetailView
 from django.views.generic.list import BaseListView
-from numpy import ERR_WARN
 
 # local
 from portal.forms import (MeasurementUploadForm, 
@@ -22,7 +21,7 @@ from portal.forms import (MeasurementUploadForm,
     NewLinearRegssionModelForm, NewSimcaModelForm, 
     NewTestModelForm, 
     CopyModelForm)
-from portal.models import Measurement, Model, Source, Prediction
+from portal.models import Measurement, Model, Source, Prediction, Group
 from portal.core import DATAHANDLERS, SIMCAMODEL, TESTMODELTYPE, LINEARREGRESSIONMODEL
 from portal.core.model_type.simca.simca import SimcaParameters, LimitType
 
@@ -33,19 +32,7 @@ if TYPE_CHECKING:
 
 
 def index(request: HttpRequest):
-
-    date_time_format = "%d-%m-%Y, %H:%M:%S"
-
-    first_visit_time = request.session.get('first_visit_time', None)
-    if first_visit_time is None:
-        first_visit_time = datetime.now().strftime(date_time_format)
-        request.session['first_visit_time'] = first_visit_time
-    context = {
-        'request_time': datetime.now().strftime(date_time_format),
-        'first_visit_time': first_visit_time,
-    }
-    return render(request, 'index.html', context=context)
-
+    return render(request, 'index.html', context={})
 
 class MeasurementsView(TemplateView, BaseListView):
     model = Measurement
@@ -53,28 +40,50 @@ class MeasurementsView(TemplateView, BaseListView):
 
     def __init__(self, **kwargs: any) -> None:
         super().__init__(**kwargs)
-        # reload the choices
-        self.source_choices = [(d.id, d.name) for d in list(Source.objects.all())]
+        self.source_choices = list((d.id, d.name) for d in Source.objects.all())
         self.object_list = self.model.objects.all()
+        self.groups_chocies = list((l.id, l.name) for l in Group.objects.all())
 
     def get_context_data(self, **kwargs):
-        form = MeasurementUploadForm(DATAHANDLERS.choices, self.source_choices, initial={
+        form = MeasurementUploadForm(DATAHANDLERS.choices, self.source_choices, self.groups_chocies, initial={
             'measured': datetime.now(),
             'data_handler': DATAHANDLERS.choices[0],
             'source': self.source_choices[0] if len(self.source_choices) > 0 else None,
+            'groups': self.groups_chocies[0] if len(self.groups_chocies) > 0 else None,
             'file': None
         })
+
+        group_id = FilterForm.ALL
+        if self.request.GET and 'group_filter' in self.request.GET:
+            group_id = self.request.GET.get('group_filter')
+        
+        if group_id == FilterForm.ALL:
+            self.object_list = self.model.objects.all()
+        else:
+            self.object_list = list(self.model.objects.filter(groups__id=group_id))    
+
         context = BaseListView.get_context_data(self, **kwargs)
+
+        context['group_filter'] = FilterForm(
+            'group_filter',
+            'group',
+            list((l.id, l.name) for l in Group.objects.all()),
+            initial=group_id,
+            includeAll=True)       
         context["upload_form"] = form
+        context['measurements_page'] = Paginator(self.object_list, 10).get_page(self.request.GET.get('page'))
+        
         return context
 
     def post(self, request, *args, **kwargs):
-        form = MeasurementUploadForm(DATAHANDLERS.choices, self.source_choices, request.POST)
+        form = MeasurementUploadForm(DATAHANDLERS.choices, self.source_choices, self.groups_chocies, request.POST)
         name_already_exists: bool = Measurement.objects.filter(
             name__exact=request.POST['name']).count() > 0
 
         if not form.is_valid():
             return Result(False, "Data was not valid").render_view()
+
+        form_data = form.cleaned_data
 
         if name_already_exists:
             return Result(False, "Name already exists",
@@ -84,21 +93,21 @@ class MeasurementsView(TemplateView, BaseListView):
             return Result(False, "No file selected",
                           "Please go back and select a file to upload").render_view()
 
-        data_handler = request.POST['data_handler']
+        data_handler = form_data['data_handler']
         try:
             data = DATAHANDLERS.get(data_handler).load_from_file(request.FILES['file'])
         except UnicodeDecodeError as decode_error:
             return Result(False, "Unicode decoding error", details_formatted=str(decode_error)).render_view()
         # except Exception as exc:
         #     return Result(False, "Unhandled - failed to read", details_formatted=str(exc)).render_view()
-        source = Source.objects.filter(id__exact=request.POST['source']).first()
+        source = Source.objects.filter(id__exact=form_data['source']).first()
 
         measurement = Measurement()
         measurement.data = data
         measurement.data_handler = data_handler
-        measurement.source = source
-        measurement.name = request.POST['name']
-        measurement.time_measured = request.POST['measured']
+        measurement.source = source        
+        measurement.name = form_data['name']
+        measurement.time_measured = form_data['measured']
         measurement.user_created = request.user
         measurement.user_changed = request.user
 
@@ -109,6 +118,9 @@ class MeasurementsView(TemplateView, BaseListView):
 
         try:
             Measurement.save(measurement)
+            if 'groups' in  form_data:
+                for group_id_string in form_data['groups']:
+                    measurement.groups.add(int(group_id_string))
         except Exception as exc:
             # TODO: Replace this error by a generic one and write stacktrace only to log
             return Result(False, "Internal problem", str(exc)).render_view()
@@ -171,7 +183,6 @@ class MeasurementDetailView(DetailView):
             f"Result:{prediction.result}\nScore:{prediction.score}"
         ).render_view()
 
-
 class ModelsView(TemplateView, BaseListView):
     model = Model
     template_name = 'models.html'
@@ -186,6 +197,7 @@ class ModelsView(TemplateView, BaseListView):
         context['new_lreg_model_form'] = NewLinearRegssionModelForm()
         context['new_test_model_form'] = NewTestModelForm()
         context['new_simca_model_form'] = NewSimcaModelForm(SIMCAMODEL.LIMITTYPE_CHOICES)
+        context['models_page'] = Paginator(self.object_list, 10).get_page(self.request.GET.get('page'))
         return context
 
     def post(self, request : HttpRequest, *args, **kwargs):
@@ -242,12 +254,23 @@ class ModelDetailView(DetailView):
     template_name = 'model-detail.html'
 
     def get_context_data(self, **kwargs):
+        group_id = FilterForm.ALL
+        if self.request.GET and 'group_filter' in self.request.GET:
+            group_id = self.request.GET.get('group_filter')
+     
         context = DetailView.get_context_data(self, **kwargs)
-        context["train_form"] = ModelTrainForm(self._get_trainable_measurements())
+       
+        context['group_filter'] = FilterForm(
+            'group_filter',
+            'group',
+            list((l.id, l.name) for l in Group.objects.all()),
+            initial=group_id,
+            includeAll=True)       
+        context["train_form"] = ModelTrainForm(self._get_trainable_measurements(group_id))
         context["copy_form"] = CopyModelForm()
         return context
 
-    def _get_trainable_measurements(self) -> 'QuerySet':
+    def _get_trainable_measurements(self, group_id : str = FilterForm.ALL) -> 'QuerySet':
         # TODO This is ahighly ineffecient way to gather all trainable measurements:
         # 1. we walk through  Measurements twice: first retireving them, then just for generating a Queryset object
         # - possible quick fix: use a MultipleChoiceField instaed and handle list of choices manually
@@ -255,7 +278,12 @@ class ModelDetailView(DetailView):
         # - need a stricter/better/more efficient way to figure out compatability just absed on a db fields (one query)
         model: Model = self.get_object()
         trainable_ids = []
-        for m in Measurement.objects.all():
+        if group_id == FilterForm.ALL:
+            filtered_measurements =  Measurement.objects.all()
+        else:
+            filtered_measurements = Measurement.objects.filter(groups__id=group_id)
+
+        for m in filtered_measurements:
             if m.is_labelled and model.is_compatible(m):
                 trainable_ids.append(m.id)
 
@@ -302,6 +330,17 @@ class ModelDetailView(DetailView):
         if(form.is_valid()):
             data = form.cleaned_data
             name = data.get('name')
+
+            print(request.user)
+            print(request.user.get_all_permissions())
+            if name.isspace(): name = None 
+
+            if name and not request.user.has_perm('portal.add_model'):
+                return Result(False, "Not allowed", "You do not have the rights to create new models").render_view()
+            
+            if not name and not request.user.has_perm('portal.change_model'):
+                return Result(False, "Not allowed", "You do not have the rights to change existing models").render_view()
+
             if name and Model.objects.filter(name=name).count() > 0:
                 return Result(False, "Model already exists", "Please choose a different name").render_view()
 
@@ -334,6 +373,17 @@ class ModelDetailView(DetailView):
 
             return Result(True, "Training finished",
                           f"score before: {old_score}\nscore after: {new_score}\n{operation_text}").render_view()
+
+
+class TopicView(TemplateView):
+    template_name = 'topic.html'
+
+    def get_context_data(self, topic, **kwargs: any) -> dict[str, any]:
+        context = TemplateView.get_context_data(self, **kwargs)
+
+        context['title'] = str.upper(topic[0]) + topic[1:]
+        return context
+        
 
 
 @dataclass
