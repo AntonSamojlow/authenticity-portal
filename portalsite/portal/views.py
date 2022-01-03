@@ -158,10 +158,12 @@ class MeasurementDetailView(DetailView):
                 if p.model.id == int(model_id):
                     filtered_predictions.append(p)
         
+        modeltype_by_modelid = {m.id : m.model_type for m in Model.objects.all()}
+
         context['model_filter'] = FilterForm(
             'model_filter',
             'model',
-            list(set((p.model.id, p.model.name)for p in predictions)),
+            list(set((p.model.id, f"{p.model.name} ({modeltype_by_modelid[p.model.id]})") for p in predictions)),
             initial=model_id,
             includeAll=True)       
         context['predictions_page'] = Paginator(filtered_predictions, 10).get_page(self.request.GET.get('page'))
@@ -380,10 +382,14 @@ class TopicView(TemplateView):
 
     def get_context_data(self, topic, **kwargs: any) -> dict[str, any]:
         context = TemplateView.get_context_data(self, **kwargs)
-
         context['title'] = str.upper(topic[0]) + topic[1:]
+        match topic:
+            case 'iris':
+                context['description_template'] = "topics/iris_description.html"
+            case _:
+                context['description_template'] = "topics/generic_description.html"
+
         return context
-        
 
 
 @dataclass
