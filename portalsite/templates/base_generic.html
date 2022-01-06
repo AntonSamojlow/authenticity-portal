@@ -64,13 +64,9 @@
 	<div class="container-fluid">
 		<div class="row">
 			<div class="col"></div>
-			<div class="col-sm-8 d-flex justify-content-center alert alert-warning">
-				<div class="d-flex flex-column" role="alert">
-					<h6>Work in progress - please try again later </h6>
-					<p>Welcome to authenticity portal, a website (currently being) developed by <em>Anton Samojlow</em>.
-					</p>
-				</div>
-			</div>
+			{% block top-banner %}
+			{% endblock %}
+			
 			<div class="col"></div>
 		</div>
 		<div class="row">
