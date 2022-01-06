@@ -69,7 +69,7 @@ class Measurement(models.Model):
     def is_labelled(self) -> bool:
         return not self.model_target is None
     
-    # this is a not very elegant short cut - the langth parameter should really be controlled in the view
+    # this is a not very elegant short cut - the length parameter should really be controlled in the view
     @property
     def groups_as_short_text(self) -> str:
         return self.groups_as_text(42)

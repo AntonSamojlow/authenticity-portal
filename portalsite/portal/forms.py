@@ -50,24 +50,31 @@ class ModelTrainForm(forms.Form):
    
 
 class NewLinearRegssionModelForm(forms.Form):
+    def __init__(self, groups_choices: list, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        self.fields['groups'].choices = groups_choices
+
     name = forms.CharField(required=True)
+    groups = forms.MultipleChoiceField(required=False)
     features = forms.IntegerField(min_value=1, required=True)
 
 class NewTestModelForm(forms.Form):
     name = forms.CharField(required=True)
-
 class NewSimcaModelForm(forms.Form):
-    def __init__(self, limit_type_choices: list, *args, **kwargs) -> None:
+    def __init__(self, limit_type_choices: list, groups_choices: list, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.fields['limit_type'].choices = limit_type_choices
+        self.fields['groups'].choices = groups_choices
 
     name = forms.CharField(required=True)
+    groups = forms.MultipleChoiceField(required=False)
     features = forms.IntegerField(min_value=2, required=True)  
     components = forms.IntegerField(min_value=1, required=True)  
     alpha = forms.FloatField(min_value=0, max_value=1, initial=0.05, required=True)  
     gamma = forms.FloatField(min_value=0, max_value=1, initial=0.01, required=True)  
     limit_type = forms.ChoiceField()  
     scale = forms.BooleanField(required=False, initial=False)  
+    
 
 class CopyModelForm(forms.Form):
     new_name = forms.CharField(required=True)

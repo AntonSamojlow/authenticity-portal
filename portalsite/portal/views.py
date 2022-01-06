@@ -76,7 +76,7 @@ class MeasurementsView(TemplateView):
                 initial=group_id,
                 includeAll=True
             ),       
-            'upload_form' :  form,
+            'upload_form' : form,
             'measurements_page' : get_measurements_paginator([group_id], self.request)
         }
         return context
@@ -199,20 +199,20 @@ class ModelsView(TemplateView, BaseListView):
     def __init__(self, **kwargs: any) -> None:
         super().__init__(**kwargs)
         self.object_list = self.model.objects.all()
+        self.groups_choices = list((l.id, l.name) for l in Group.objects.all())
 
 
     def get_context_data(self, **kwargs):        
         context = BaseListView.get_context_data(self, **kwargs)
-        context['new_lreg_model_form'] = NewLinearRegssionModelForm()
+        context['new_lreg_model_form'] = NewLinearRegssionModelForm(self.groups_choices)
         context['new_test_model_form'] = NewTestModelForm()
-        context['new_simca_model_form'] = NewSimcaModelForm(SIMCAMODEL.LIMITTYPE_CHOICES)
+        context['new_simca_model_form'] = NewSimcaModelForm(SIMCAMODEL.LIMITTYPE_CHOICES, self.groups_choices)
         context['models_page'] = Paginator(self.object_list, 10).get_page(self.request.GET.get('page'))
         return context
 
     def post(self, request : HttpRequest, *args, **kwargs):
-
         if 'new_lreg_model_submit' in request.POST:
-            form = NewLinearRegssionModelForm(request.POST)
+            form = NewLinearRegssionModelForm(self.groups_choices, request.POST)
             model_type = LINEARREGRESSIONMODEL
         
         elif 'new_test_model_submit' in request.POST:
@@ -220,14 +220,14 @@ class ModelsView(TemplateView, BaseListView):
             model_type = TESTMODELTYPE
         
         elif 'new_simca_model_submit' in request.POST:
-            form = NewSimcaModelForm(SIMCAMODEL.LIMITTYPE_CHOICES, request.POST)
+            form = NewSimcaModelForm(SIMCAMODEL.LIMITTYPE_CHOICES, self.groups_choices, request.POST)
             model_type = SIMCAMODEL
 
         if not form.is_valid():
             return Result(False, "Data was not valid").render_view()
         
-        data = form.cleaned_data
-        name = data.get('name')
+        form_data = form.cleaned_data
+        name = form_data.get('name')
         if Model.objects.filter(name__exact=name).count() > 0:
             return Result(False, "Name already exists",
                         "Please go back and choose a different name").render_view()
@@ -254,6 +254,11 @@ class ModelsView(TemplateView, BaseListView):
                 parameters=parameters)
 
         model.save()
+
+        if 'groups' in  form_data:
+            for group_id_string in form_data['groups']:
+                model.groups.add(int(group_id_string))
+
         return Result(True, f"New model '{name}' created",
                       link_address=model.get_absolute_url(),
                       link_text="Details of the new model").render_view()

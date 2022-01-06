@@ -26,3 +26,4 @@ class Group(models.Model):
     def get_absolute_url(self):
         """Returns the url to display the object."""
         return reverse('group-detail', args=[str(self.id)])
+
