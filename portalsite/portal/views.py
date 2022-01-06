@@ -110,6 +110,7 @@ class MeasurementsView(TemplateView, BaseListView):
         measurement.time_measured = form_data['measured']
         measurement.user_created = request.user
         measurement.user_changed = request.user
+        measurement.notes = form_data['notes']
 
         validation_results = measurement.validate()
         if sum([0 if result.success else 1 for result in validation_results]) > 0:

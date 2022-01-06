@@ -1,5 +1,6 @@
 from typing import TYPE_CHECKING
 from django import forms
+from django.forms.widgets import Textarea
 
 class MeasurementUploadForm(forms.Form):
     def __init__(self, 
@@ -19,6 +20,7 @@ class MeasurementUploadForm(forms.Form):
     source = forms.ChoiceField()
     groups = forms.MultipleChoiceField(required=False)
     file = forms.FileField(required=False)
+    notes = forms.CharField(required=False, widget=Textarea)
 
 class FilterForm(forms.Form):
     ALL = 'ALL'

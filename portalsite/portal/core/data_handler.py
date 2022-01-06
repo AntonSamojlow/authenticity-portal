@@ -56,7 +56,7 @@ class NumericCsvHandler(DataHandler):
     
     @property
     def name(self) -> str:
-        return "NumericCsvHandler"
+        return "NumericCsv"
 
     @property
     def description(self) -> str:

@@ -44,7 +44,7 @@
             </form>
             <form method="post" enctype="multipart/form-data">
                 {% csrf_token %}
-                    <table>
+                <table>
                     {{ train_form }}
                 </table>
                 <button class="btn btn-outline-primary" type="submit" name="train_submit">Start training...</button>
