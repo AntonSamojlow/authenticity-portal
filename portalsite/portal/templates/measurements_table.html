@@ -1,0 +1,55 @@
+<table class="table">
+    <thead>
+        <tr>
+        <tr colspan="4">
+            <div class="pagination ">
+                {% if measurements_page.paginator.num_pages > 1 %}
+                <span class="step-links">
+                    {% if measurements_page.has_previous %}
+                    <a href="?page=1">&laquo; first</a>
+                    <a href="?page={{ measurements_page.previous_page_number }}">previous</a>
+                    {% else %}
+                    <a>&laquo; first</a>
+                    <a>previous</a>
+                    {% endif %}
+
+                    <span class="current"> | Page {{ measurements_page.number }} of
+                        {{ measurements_page.paginator.num_pages }} |
+                    </span>
+
+                    {% if measurements_page.has_next %}
+                    <a href="?page={{ measurements_page.next_page_number }}">next</a>
+                    <a href="?page={{ measurements_page.paginator.num_pages }}">last &raquo;</a>
+                    {% else %}
+                    <a>next</a>
+                    <a>last &raquo;</a>
+                    {% endif %}
+                </span>
+                {% endif %}
+            </div>
+        </tr>
+        </tr>
+        <tr>
+            <th scope="col">Name</th>
+            <th scope="col">Groups</th>
+            <th scope="col">Measured</th>
+            <th scope="col">Source</th>
+            <th scope="col">Uploaded</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for measurement in measurements_page %}
+        <tr data-bs-placement="top" title='Notes: {{ measurement.notes }}'>
+            <td scope="row"><a href="{{ measurement.get_absolute_url }}">{{ measurement.name }}</a></td>
+            <td>{{ measurement.groups_as_short_text }}</td>
+            <td data-bs-toggle="tooltip">{{ measurement.time_measured }}</td>
+            <td>{{ measurement.source }}</td>
+            <td>{{ measurement.time_created }} (by '{{ measurement.user_created }}')</td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td>EMPTY</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>

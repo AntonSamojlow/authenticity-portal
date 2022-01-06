@@ -34,14 +34,24 @@ if TYPE_CHECKING:
 def index(request: HttpRequest):
     return render(request, 'index.html', context={})
 
-class MeasurementsView(TemplateView, BaseListView):
+def get_measurements_paginator(group_ids: list, request: HttpRequest):
+    objects = Measurement.objects.none()
+    if FilterForm.ALL in group_ids:
+        objects = Measurement.objects.all()
+    else:
+        for group_id in group_ids:
+            objects = objects | Measurement.objects.filter(groups__id=group_id) 
+
+    return Paginator(objects, 10).get_page(request.GET.get('page'))
+     
+
+class MeasurementsView(TemplateView):
     model = Measurement
     template_name = 'measurements.html'
 
     def __init__(self, **kwargs: any) -> None:
         super().__init__(**kwargs)
         self.source_choices = list((d.id, d.name) for d in Source.objects.all())
-        self.object_list = self.model.objects.all()
         self.groups_chocies = list((l.id, l.name) for l in Group.objects.all())
 
     def get_context_data(self, **kwargs):
@@ -56,23 +66,19 @@ class MeasurementsView(TemplateView, BaseListView):
         group_id = FilterForm.ALL
         if self.request.GET and 'group_filter' in self.request.GET:
             group_id = self.request.GET.get('group_filter')
-        
-        if group_id == FilterForm.ALL:
-            self.object_list = self.model.objects.all()
-        else:
-            self.object_list = list(self.model.objects.filter(groups__id=group_id))    
 
-        context = BaseListView.get_context_data(self, **kwargs)
-
-        context['group_filter'] = FilterForm(
-            'group_filter',
-            'group',
-            list((l.id, l.name) for l in Group.objects.all()),
-            initial=group_id,
-            includeAll=True)       
-        context["upload_form"] = form
-        context['measurements_page'] = Paginator(self.object_list, 10).get_page(self.request.GET.get('page'))
-        
+        context= {
+            'group_filter' : FilterForm
+            (
+                'group_filter',
+                'group',
+                list((l.id, l.name) for l in Group.objects.all()),
+                initial=group_id,
+                includeAll=True
+            ),       
+            'upload_form' :  form,
+            'measurements_page' : get_measurements_paginator([group_id], self.request)
+        }
         return context
 
     def post(self, request, *args, **kwargs):
@@ -386,9 +392,20 @@ class TopicView(TemplateView):
         context['title'] = str.upper(topic[0]) + topic[1:]
         match topic:
             case 'iris':
+                group_ids = list(g.id for g in Group.objects.filter(name__icontains='iris'))
                 context['description_template'] = "topics/iris_description.html"
+                context['measurements_page'] = get_measurements_paginator(group_ids, self.request)
+            case 'salmon':
+                group_ids = list(g.id for g in Group.objects.filter(name__icontains='salmon'))
+                context['description_template'] = "topics/generic_description.html"
+                context['measurements_page'] = get_measurements_paginator(group_ids, self.request)
+            case 'vanilla':
+                group_ids = list(g.id for g in Group.objects.filter(name__icontains='vanilla'))
+                context['description_template'] = "topics/generic_description.html"
+                context['measurements_page'] = get_measurements_paginator(group_ids, self.request)
             case _:
                 context['description_template'] = "topics/generic_description.html"
+                context['measurements_page'] = None
 
         return context
 
