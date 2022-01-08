@@ -1,6 +1,8 @@
 <table class="table">
     <thead>
         <tr>
+
+         
         <tr colspan="4">
             <div class="pagination ">
                 {% if measurements_page.paginator.num_pages > 1 %}
@@ -40,7 +42,14 @@
     <tbody>
         {% for measurement in measurements_page %}
         <tr data-bs-placement="top" title='Notes: {{ measurement.notes }}'>
-            <td scope="row"><a href="{{ measurement.get_absolute_url }}">{{ measurement.name }}</a></td>
+            <td class="col-sm-9"> 
+                {% if link_to_download is True %}
+                <a href="{% url 'measurementdownload' pk=measurement.id%} ">
+                {% else %}
+                <a href="{{ measurement.get_absolute_url }}">
+                {% endif %}
+                {{ measurement.name }}</a>
+            </td>
             <td>{{ measurement.groups_as_short_text }}</td>
             <td data-bs-toggle="tooltip">{{ measurement.time_measured }}</td>
             <td>{{ measurement.source }}</td>

@@ -2,9 +2,9 @@
 
 {% block content %}
 <div>
-    <div class="mb-5 mt-5">
-        <h1>Prediction</h1>
-        <p>To use the model '{{ model.name }}' for a prediction, please provide a measurement file:</p>
+    <div class="mb-5">
+        <h1>Prediction file upload </h1>
+        <p>Please provide the measurement file that is to be predicted with the model '{{ model.name }}':</p>
         <div class="input-group p-3 d-flex justify-content-center m-3 border border-primary rounded">
             <form method="post" enctype="multipart/form-data">
                 {% csrf_token %}
@@ -14,6 +14,15 @@
                 <button class="btn btn-outline-primary" type="predict"  style="display: inline;">Submit and predict</button>
             </form>
         </div>
+    </div>
+    <div class="mb-5">
+        <h4>Example of measurement files</h4>
+        <p>For an example of a comaptible measurement file, you can download one of these:</p>
+        <form class="col-sm-12  m-2" method="get" enctype="multipart/form-data">
+            <button class="btn btn-sm btn-outline-primary" type="submit">Filter by</button>
+            {{ group_filter }}
+        </form>
+        {% include "measurements-table.html" %}
     </div>
 </div>
 {% endblock %}

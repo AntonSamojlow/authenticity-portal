@@ -53,7 +53,10 @@ def measurementdownload(request: HttpRequest, pk: int) -> HttpResponse:
 
     return response
 
-def _get_measurements_page(group_ids: list, request: HttpRequest):
+def _get_measurements_page(group_ids: list, 
+    request: HttpRequest,
+    compatible_model: Model = None):
+
     objects = Measurement.objects.none()
     if FilterForm.ALL in group_ids:
         objects = Measurement.objects.all()
@@ -61,6 +64,13 @@ def _get_measurements_page(group_ids: list, request: HttpRequest):
         for group_id in group_ids:
             objects = objects | Measurement.objects.filter(groups__id=group_id) 
 
+    if compatible_model is not None:
+        compatible_objects = []
+        for m in objects.distinct():
+            if compatible_model.is_compatible(m):
+                compatible_objects.append(m)
+        return Paginator(compatible_objects, 10).get_page(request.GET.get('page'))
+            
     return Paginator(objects.distinct(), 10).get_page(request.GET.get('page'))
      
 def _get_models_page(group_ids: list, request: HttpRequest, only_ready_for_prediction: bool = False):
@@ -172,11 +182,31 @@ class MeasurementsView(TemplateView):
 class PredictView(TemplateView):
     template_name = 'predict.html'
 
+    def __init__(self, **kwargs: any) -> None:
+        super().__init__(**kwargs)
+        self.source_choices = list((d.id, d.name) for d in Source.objects.all())
+        self.groups_chocies = list((l.id, l.name) for l in Group.objects.all())
+
     def get_context_data(self, pk:int, **kwargs: any) -> dict[str, any]:
         context = TemplateView.get_context_data(self, **kwargs)
-        context['model'] = Model.objects.get(pk=pk)
-        context['upload_form'] = PredictionUploadForm(DATAHANDLERS.choices)
 
+        model: Model = Model.objects.get(pk=pk)
+
+        group_id = FilterForm.ALL
+        if self.request.GET and 'group_filter' in self.request.GET:
+            group_id = self.request.GET.get('group_filter')
+
+        context['group_filter'] = FilterForm(
+                'group_filter',
+                'group',
+                list((l.id, l.name) for l in Group.objects.all()),
+                initial=group_id,
+                includeAll=True)
+
+        context['model'] = model
+        context['upload_form'] = PredictionUploadForm(DATAHANDLERS.choices)
+        context['measurements_page'] = _get_measurements_page([group_id], self.request, model)
+        context['link_to_download'] = True
         return context
     
     def post(self, request: HttpRequest, *args, **kwargs):
