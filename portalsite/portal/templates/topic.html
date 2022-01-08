@@ -5,9 +5,11 @@
     <div class="mb-5 mt-1">
         <h1>{{title}}</h1>
         {% include description_template %}
-        <h3>Measurement data</h3>
+        <h3>Data overview</h3>
+        <h5>Measurements</h5>
         {% include "measurements-table.html" %}
-        <h3>Models</h3>
+        <h5>Models</h5>
+        {% include "models-table.html" %}
         <h3>Predict from file</h3>
     </div>
 </div>

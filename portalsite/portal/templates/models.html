@@ -39,57 +39,11 @@
     <div class="mb-5 mt-5">
         <h4>Models</h4>
         {% if perms.portal.view_model %}
-        <table class="table">
-            <thead>
-                <tr colspan="4">
-                    <div class="pagination ">
-                        {% if models_page.paginator.num_pages > 1 %}
-                        <span class="step-links">
-                            {% if models_page.has_previous %}
-                            <a href="?page=1">&laquo; first</a>
-                            <a href="?page={{ models_page.previous_page_number }}">previous</a>
-                            {% else %}
-                            <a>&laquo; first</a>
-                            <a>previous</a>
-                            {% endif %}
-
-                            <span class="current"> | Page {{ models_page.number }} of
-                                {{ models_page.paginator.num_pages }} |
-                            </span>
-
-                            {% if models_page.has_next %}
-                            <a href="?page={{ models_page.next_page_number }}">next</a>
-                            <a href="?page={{ models_page.paginator.num_pages }}">last &raquo;</a>
-                            {% else %}
-                            <a>next</a>
-                            <a>last &raquo;</a>
-                            {% endif %}
-                        </span>
-                        {% endif %}
-                    </div>
-                </tr>
-                <tr>
-                    <th scope="col">Name</th>
-                    <th scope="col">Type</th>
-                    <th scope="col">Groups</th>
-                    <th scope="col">Last changed</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for model in models_page %}
-                <tr>
-                    <td scope="row"><a href="{{ model.get_absolute_url }}">{{ model.name }}</a></td>
-                    <td>{{ model.get_type.name }}</td>
-                    <td>{{ model.groups_as_short_text }}</td>
-                    <td>{{ model.time_changed }} (by '{{ model.user_changed }}')</td>
-                </tr>
-                {% empty %}
-                <tr>
-                    <td>EMPTY</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+        <form class="col-sm-12" method="get" enctype="multipart/form-data">
+            <button class="btn btn-outline-primary" type="submit">Filter by</button>
+            {{ group_filter }}
+        </form>
+        {% include "models-table.html" %}
         {% else %}
         <p>You don't have permission to view models.</p>
         {% endif %}
