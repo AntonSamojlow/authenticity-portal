@@ -36,7 +36,7 @@
     </thead>
     <tbody>
         {% for model in models_page %}
-        <tr>
+        <tr data-bs-placement="top" title='Details: {{ model.details_text }}'>
             <td scope="row"><a href="{{ model.get_absolute_url }}">{{ model.name }}</a></td>
             <td>{{ model.get_type.name }}</td>
             <td>{{ model.groups_as_short_text }}</td>
