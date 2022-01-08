@@ -42,7 +42,7 @@ def _get_measurements_page(group_ids: list, request: HttpRequest):
         for group_id in group_ids:
             objects = objects | Measurement.objects.filter(groups__id=group_id) 
 
-    return Paginator(objects, 10).get_page(request.GET.get('page'))
+    return Paginator(objects.distinct(), 10).get_page(request.GET.get('page'))
      
 def _get_models_page(group_ids: list, request: HttpRequest):
     objects = Model.objects.none()
@@ -51,8 +51,9 @@ def _get_models_page(group_ids: list, request: HttpRequest):
     else:
         for group_id in group_ids:
             objects = objects | Model.objects.filter(groups__id=group_id) 
+    
 
-    return Paginator(objects, 10).get_page(request.GET.get('page'))
+    return Paginator(objects.distinct(), 10).get_page(request.GET.get('page'))
      
 class MeasurementsView(TemplateView):
     model = Measurement

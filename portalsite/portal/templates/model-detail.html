@@ -38,7 +38,7 @@
         <div class="row mb-5 mt-5">
             <h3 class="col-sm-12">Train the model</h3>
             {% if perms.portal.add_model or perms.portal.change_model %}
-            <form class="col-sm-12" method="get" enctype="multipart/form-data">
+            <form class="col-sm-12  m-2" method="get" enctype="multipart/form-data">
                 <button class="btn btn-outline-primary" type="submit">Filter by</button>
                 {{ group_filter }}
             </form>
