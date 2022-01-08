@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 # endregion
 
 class LinearRegressionModel(ModelType):
-    """Classic linear regression model."""
+    """The linear regression model is a least-squares fit of a real-valued linear function over the feature space"""
     __instance_id = "LinearRegr"
 
     @property

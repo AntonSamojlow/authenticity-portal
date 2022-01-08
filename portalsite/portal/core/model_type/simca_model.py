@@ -21,11 +21,9 @@ if TYPE_CHECKING:
 
 class SimcaModel(ModelType):
     """
-    Base implementation of a simca model: Soft Independent Modelling of Class Analogy.
-
-    Further info:
-        - https://mdatools.com/docs/simca.html
-        - https://doi.org/10.1002/cem.2506
+    SIMCA stands for Soft Independent Modelling of Class Analogy and is a one-class classification model. 
+    See also <a href="https://mdatools.com/docs/simca.html"/> and https://doi.org/10.1002/cem.2506.
+    Note that this implementation assumes in-class data is labelled with '1' (and out-class data with '0'). 
     """
 
     __instance_id = "Simca"

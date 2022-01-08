@@ -1,43 +1,75 @@
 {% extends "base_generic.html" %}
 
 {% block content %}
-<div>    
-    <div class="mb-5 mt-5">
-        <h4>Create new models</h4>
+<div>
+    <div class="mb-5">
+        <h4>New model</h4>
+        <p>To create a new (untrained) model, use one of the following forms:</p>
         {% if perms.portal.add_model %}
-        <div class="input-group p-3 d-flex justify-content-center m-3 border border-primary rounded">
-            <form method="post" enctype="multipart/form-data">
-                {% csrf_token %}
-                <table>
-                    {{ new_lreg_model_form }}
-                </table>
-                <button class="btn btn-outline-primary" type="submit" name="new_lreg_model_submit">New linear regression model</button>
-            </form>
-        </div>
-        <!-- <div class="input-group p-3 d-flex justify-content-center m-3 border border-primary rounded">
-            <form method="post" enctype="multipart/form-data">
-                {% csrf_token %}
-                <table>
-                    {{ new_test_model_form }}
-                </table>
-                <button class="btn btn-outline-primary" type="submit" name="new_test_model_submit">New test model</button>
-            </form>
-        </div> -->
-        <div class="input-group p-3 d-flex justify-content-center m-3 border border-primary rounded">
-            <form method="post" enctype="multipart/form-data">
-                {% csrf_token %}
-                <table>
-                    {{ new_simca_model_form }}
-                </table>
-                <button class="btn btn-outline-primary" type="submit" name="new_simca_model_submit">New SIMCA model</button>
-            </form>
+        <div id="modelsCarousel" class="carousel slide" data-bs-ride="carousel" data-bs-interval="false">
+            <div class="carousel-inner">
+                <div class="carousel-item active">
+                    <div class="row">
+                        <div class="col "></div>
+                        <div class="col-8">
+                            <div class="input-group d-flex justify-content-center  border border-primary rounded">
+                                
+                                <form class="mt-3 mb-3" method="post" enctype="multipart/form-data">
+                                    {% csrf_token %}
+                                    <table>
+                                        {{ active_model.form }}
+                                    </table>
+                                    <button class="btn btn-outline-primary" type="submit" name="new_simca_model_submit">
+                                        Create {{ active_model.name }}</button>
+                                </form>
+                                <div class="m-2">
+                                    <p>{{ active_model.description }}</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col"></div>
+                    </div>
+                </div>
+                {% for model in other_models %}
+                <div class="carousel-item">
+                    <div class="row">
+                        <div class="col "></div>
+                        <div class="col-8">
+                            <div class="input-group d-flex justify-content-center  border border-primary rounded">
+                                <form class="mt-3 mb-3" method="post" enctype="multipart/form-data">
+                                    {% csrf_token %}
+                                    <table>
+                                        {{ model.form }}
+                                    </table>
+                                    <button class="btn btn-outline-primary" type="submit" name="new_simca_model_submit">
+                                        Create {{ model.name }}</button>
+                                </form>
+                                <div class="m-2">
+                                    <p>{{ model.description }}</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col"></div>
+                    </div>
+                </div>
+                {% endfor %}
+
+            </div>
+            <button class="carousel-control-prev" type="button" data-bs-target="#modelsCarousel" data-bs-slide="prev">
+                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                <!-- <span class="visually-hidden">Previous</span> -->
+            </button>
+            <button class="carousel-control-next" type="button" data-bs-target="#modelsCarousel" data-bs-slide="next">
+                <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                <!-- <span class="visually-hidden">Next</span> -->
+            </button>
         </div>
         {% else %}
         <p>You don't have permission to add models.</p>
         {% endif %}
     </div>
     <div class="mb-5 mt-5">
-        <h4>Models</h4>
+        <h4>Existing models</h4>
         {% if perms.portal.view_model %}
         <form class="col-sm-12" method="get" enctype="multipart/form-data">
             <button class="btn btn-outline-primary" type="submit">Filter by</button>

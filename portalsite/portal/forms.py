@@ -41,7 +41,7 @@ class FilterForm(forms.Form):
 
 class ModelTrainForm(forms.Form):
     name = forms.CharField(required=False,
-        help_text="Name of the resulting trained model - leave blank to *update* the current model")
+        help_text="(leave blank to update the current model)")
     measurements = forms.ModelMultipleChoiceField(queryset=None)
 
     def __init__(self, measurement_query_set, *args, **kwargs) -> None:

@@ -210,11 +210,21 @@ class ModelsView(TemplateView):
 
 
     def get_context_data(self, **kwargs):      
-
-      
         group_id = FilterForm.ALL
         if self.request.GET and 'group_filter' in self.request.GET:
             group_id = self.request.GET.get('group_filter')
+
+        lr_model = {
+            'form' : NewLinearRegssionModelForm(self.groups_choices),
+            'description' : LINEARREGRESSIONMODEL.description,
+            'name' : "Linear Regression Model"
+        }
+
+        simca_model = {
+            'form' : NewSimcaModelForm(SIMCAMODEL.LIMITTYPE_CHOICES, self.groups_choices),
+            'description' : SIMCAMODEL.description,
+            'name' : "SIMCA model"
+        }
 
         context = {  
             'group_filter' : FilterForm
@@ -224,9 +234,11 @@ class ModelsView(TemplateView):
                 list((l.id, l.name) for l in Group.objects.all()),
                 initial=group_id,
                 includeAll=True
-            ),       
+            ),    
+            'active_model' : lr_model,
+            'other_models' : [simca_model],   
             'new_lreg_model_form' : NewLinearRegssionModelForm(self.groups_choices),
-            'new_test_model_form' : NewTestModelForm(),
+            # 'new_test_model_form' : NewTestModelForm(),
             'new_simca_model_form' : NewSimcaModelForm(SIMCAMODEL.LIMITTYPE_CHOICES, self.groups_choices),
             'models_page' : _get_models_page([group_id], self.request)
         } 
