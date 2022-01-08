@@ -22,8 +22,7 @@ if TYPE_CHECKING:
 class SimcaModel(ModelType):
     """
     SIMCA stands for Soft Independent Modelling of Class Analogy and is a one-class classification model. 
-    See also <a href="https://mdatools.com/docs/simca.html"/> and https://doi.org/10.1002/cem.2506.
-    Note that this implementation assumes in-class data is labelled with '1' (and out-class data with '0'). 
+    See also https://mdatools.com/docs/simca.html and https://doi.org/10.1002/cem.2506.
     """
 
     __instance_id = "Simca"
@@ -44,7 +43,13 @@ class SimcaModel(ModelType):
     @property
     def description(self) -> str:
         """Description of the type, its uses, and  possbily refering to external docs"""
-        return self.__doc__
+        return  """
+        SIMCA stands for Soft Independent Modelling of Class Analogy and is a one-class classification model. 
+        See also <a href="https://mdatools.com/docs/simca.html">mdatools.com/docs/simca</a> and 
+        <a href="https://doi.org/10.1002/cem.2506">doi.org/10.1002/cem.2506</a>.
+        <div>This is a <i>classification</i> model: in-class data is assumed to be labelled with '1' 
+        (and out-class data with '0').</div>
+        """
 
     def details_text(self, model: 'Model') -> str:
         """A formatted text describing the concrete data/paramters of the given model"""

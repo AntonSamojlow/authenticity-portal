@@ -13,7 +13,7 @@
                         <div class="col "></div>
                         <div class="col-8">
                             <div class="input-group d-flex justify-content-center  border border-primary rounded">
-                                
+
                                 <form class="mt-3 mb-3" method="post" enctype="multipart/form-data">
                                     {% csrf_token %}
                                     <table>
@@ -23,7 +23,10 @@
                                         Create {{ active_model.name }}</button>
                                 </form>
                                 <div class="m-2">
+                                    <!-- OBS! this is probably a bad idea / unsafe: -->
+                                    {% autoescape off %}
                                     <p>{{ active_model.description }}</p>
+                                    {% endautoescape %}
                                 </div>
                             </div>
                         </div>
@@ -45,7 +48,10 @@
                                         Create {{ model.name }}</button>
                                 </form>
                                 <div class="m-2">
+                                    <!-- OBS! this is probably a bad idea / unsafe: -->
+                                    {% autoescape off %}
                                     <p>{{ model.description }}</p>
+                                    {% endautoescape %}
                                 </div>
                             </div>
                         </div>
