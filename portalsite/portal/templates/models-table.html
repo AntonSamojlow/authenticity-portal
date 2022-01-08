@@ -32,6 +32,7 @@
             <th scope="col">Type</th>
             <th scope="col">Groups</th>
             <th scope="col">Last changed</th>
+            <th scope="col">Actions</th>
         </tr>
     </thead>
     <tbody>
@@ -41,6 +42,11 @@
             <td>{{ model.get_type.name }}</td>
             <td>{{ model.groups_as_short_text }}</td>
             <td>{{ model.time_changed }} (by '{{ model.user_changed }}')</td>
+            <td> 
+            {% if model.ready_for_prediction %}
+                <a href="{% url 'predict' pk=model.id%} " class="btn btn-sm btn-outline-info">Use for a prediction</a>
+            {% endif %}
+            </td>
         </tr>
         {% empty %}
         <tr>

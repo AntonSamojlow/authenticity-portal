@@ -2,6 +2,7 @@
 from abc import ABC, abstractmethod
 from typing import TypeAlias
 from json import loads, dumps
+from django.core.files.base import ContentFile
 
 # 3rd party
 from numpy import ndarray, asarray
@@ -29,7 +30,11 @@ class DataHandler(ABC, NamedIdObject):
 
     @abstractmethod
     def load_from_file(self, file: UploadedFile) -> DataStorageType:
-        """ ... """
+        """Tries to read data from file (without validation)."""
+
+    @abstractmethod
+    def to_file(self, data: DataStorageType) -> ContentFile:
+        """Returns the data formatted to a ContentFile, to be served in a download""" 
 
     @abstractmethod
     def to_json(self, data: DataStorageType, indent=None) -> str:
@@ -69,6 +74,15 @@ class NumericCsvHandler(DataHandler):
     def load_from_file(self, file: UploadedFile) -> DataStorageType:
         """Tries to read data from file (without validation)."""
         return CsvParser.read(file).to_json()
+
+    def to_file(self, data: DataStorageType) -> ContentFile:
+        """Returns the data formatted to a ContentFile, to be served in a download"""    
+        csv = CsvContent.from_json(data)
+        contentstring = ",".join(csv.headers)+"\n"
+        for row in csv.rows:
+            contentstring += ",".join(row)+"\n"
+        return ContentFile(contentstring)
+
 
     def to_json(self, data: DataStorageType, indent=None) -> str:
         """Returns the data formatted to json"""

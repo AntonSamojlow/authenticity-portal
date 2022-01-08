@@ -22,6 +22,15 @@ class MeasurementUploadForm(forms.Form):
     file = forms.FileField(required=False)
     notes = forms.CharField(required=False, widget=Textarea)
 
+class PredictionUploadForm(forms.Form):
+    def __init__(self, data_handler_choices: list, *args,**kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        self.fields['data_handler'].choices = data_handler_choices
+    
+    file = forms.FileField(required=False)
+    data_handler = forms.ChoiceField()
+
+
 class FilterForm(forms.Form):
     ALL = 'ALL'
     filter = forms.ChoiceField(required=True)

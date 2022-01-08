@@ -1,0 +1,19 @@
+{% extends "base_generic.html" %}
+
+{% block content %}
+<div>
+    <div class="mb-5 mt-5">
+        <h1>Prediction</h1>
+        <p>To use the model '{{ model.name }}' for a prediction, please provide a measurement file:</p>
+        <div class="input-group p-3 d-flex justify-content-center m-3 border border-primary rounded">
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <table>
+                    {{ upload_form }}
+                </table>
+                <button class="btn btn-outline-primary" type="predict"  style="display: inline;">Submit and predict</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

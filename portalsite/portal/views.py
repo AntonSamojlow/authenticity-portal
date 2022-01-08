@@ -4,15 +4,17 @@ from typing import TYPE_CHECKING, Any
 from datetime import datetime
 from dataclasses import dataclass
 from django import forms
-
+from io import StringIO
 
 # 3rd party
+from django.core.files.base import ContentFile
 from django.core.paginator import Paginator
 from django.http.request import HttpRequest
 from django.http.response import FileResponse, HttpResponse
 from django.shortcuts import render
 from django.views.generic import TemplateView, DetailView
 from django.views.generic.list import BaseListView
+from wsgiref.util import FileWrapper
 
 # local
 from portal.forms import (MeasurementUploadForm, 
@@ -20,10 +22,14 @@ from portal.forms import (MeasurementUploadForm,
     ModelTrainForm, 
     NewLinearRegssionModelForm, NewSimcaModelForm, 
     NewTestModelForm, 
-    CopyModelForm)
+    CopyModelForm,
+    PredictionUploadForm)
+
 from portal.models import Measurement, Model, Source, Prediction, Group
 from portal.core import DATAHANDLERS, SIMCAMODEL, TESTMODELTYPE, LINEARREGRESSIONMODEL
+from portal.core.data_handler import DataHandler
 from portal.core.model_type.simca.simca import SimcaParameters, LimitType
+
 
 # type hints
 if TYPE_CHECKING:
@@ -31,8 +37,21 @@ if TYPE_CHECKING:
 # endregion
 
 
-def index(request: HttpRequest):
+def index(request: HttpRequest) -> HttpResponse:
     return render(request, 'index.html', context={})
+
+def measurementdownload(request: HttpRequest, pk: int) -> HttpResponse:
+    measurement: Measurement = Measurement.objects.get(pk=pk)
+    # measurement.data_handler
+    handler: DataHandler = measurement.handler
+
+    file = handler.to_file(measurement.data)
+
+    response = HttpResponse(file, content_type='application/csv')
+    response['Content-Length'] = file.tell()
+    response['Content-Disposition'] = f'attachment; filename={measurement.name}.csv'
+
+    return response
 
 def _get_measurements_page(group_ids: list, request: HttpRequest):
     objects = Measurement.objects.none()
@@ -44,7 +63,7 @@ def _get_measurements_page(group_ids: list, request: HttpRequest):
 
     return Paginator(objects.distinct(), 10).get_page(request.GET.get('page'))
      
-def _get_models_page(group_ids: list, request: HttpRequest):
+def _get_models_page(group_ids: list, request: HttpRequest, only_ready_for_prediction: bool = False):
     objects = Model.objects.none()
     if FilterForm.ALL in group_ids:
         objects = Model.objects.all()
@@ -52,6 +71,9 @@ def _get_models_page(group_ids: list, request: HttpRequest):
         for group_id in group_ids:
             objects = objects | Model.objects.filter(groups__id=group_id) 
     
+    objects = objects.distinct()
+    if only_ready_for_prediction:
+        objects = objects.filter(ready_for_prediction=True)
 
     return Paginator(objects.distinct(), 10).get_page(request.GET.get('page'))
      
@@ -147,10 +169,79 @@ class MeasurementsView(TemplateView):
                       link_text="See uploaded data").render_view()
 
 
+class PredictView(TemplateView):
+    template_name = 'predict.html'
+
+    def get_context_data(self, pk:int, **kwargs: any) -> dict[str, any]:
+        context = TemplateView.get_context_data(self, **kwargs)
+        context['model'] = Model.objects.get(pk=pk)
+        context['upload_form'] = PredictionUploadForm(DATAHANDLERS.choices)
+
+        return context
+    
+    def post(self, request: HttpRequest, *args, **kwargs):
+        if 'pk' not in kwargs:
+            return Result(False, "Internal error", details_formatted="argument 'pk' missing, model can not be identified").render_view()
+        model : Model = Model.objects.get(pk=kwargs['pk'])
+
+        form = PredictionUploadForm(DATAHANDLERS.choices,request.POST)
+        if not form.is_valid():
+            return Result(False, "Data was not valid").render_view()
+        form_data = form.cleaned_data
+    
+        if 'file' not in request.FILES.keys():
+            return Result(False, 
+                        "No file selected",
+                        "Please provide a file to upload").render_view()
+
+        data_handler = form_data['data_handler']
+        try:
+            data = DATAHANDLERS.get(data_handler).load_from_file(request.FILES['file'])
+        except UnicodeDecodeError as decode_error:
+            return Result(False, "Unicode decoding error", details_formatted=str(decode_error)).render_view()
+        # except Exception as exc:
+        #     return Result(False, "Unhandled - failed to read", details_formatted=str(exc)).render_view()
+
+        # store temporary measurement in database
+        timenow = datetime.now()
+        timestamp = timenow.strftime("%Y-/%m-/%d_%H:%M:%S.%f")
+
+        measurement = Measurement()
+        measurement.data = data
+        measurement.data_handler = data_handler
+        measurement.source = Source.objects.first()
+        measurement.name = f"temp_{timestamp}" 
+        measurement.time_measured = timenow
+        measurement.user_created = request.user
+        measurement.user_changed = request.user
+        measurement.notes = f"temporary data upload for prediction with model '{model.name}' (id'{model.id}')"
+        validation_results = measurement.validate()
+        if sum([0 if result.success else 1 for result in validation_results]) > 0:
+            return Result(False, "Validation failed", details_formatted="\n".join(
+                [f"{result.name}: {result.details}" for result in validation_results])).render_view()
+
+        Measurement.save(measurement)
+
+        if not model.is_compatible(measurement):
+            measurement.delete()
+            return Result(False, "Data incompatible", details_formatted=str("The submitted measurement is not compatible with the model")).render_view()
+
+        prediction : Prediction = model.predict(measurement)
+        
+        result_details_formatted = str(f"Predicted values are: {prediction.result}"
+            + f"\nPrediction score is: {prediction.score}")
+        try:
+            measurement.delete()
+        except Exception as exc:
+            result_details_formatted += f"\nFailed to remove uploaded temporary files - please clean up manually ({exc})"
+
+        return Result(True, "Prediction computed", 
+            details_formatted=result_details_formatted).render_view()
+
 class MeasurementDetailView(DetailView):
     model = Measurement
     template_name = 'measurement-detail.html'
-
+  
     def _get_predict_choices(self) -> list[tuple[str, str]]:
         measurement: Measurement = self.get_object()
         choices = []
@@ -161,7 +252,7 @@ class MeasurementDetailView(DetailView):
 
     def get_context_data(self, **kwargs):
         context = DetailView.get_context_data(self, **kwargs)
-
+       
         model_id = FilterForm.ALL
         if self.request.GET and 'model_filter' in self.request.GET:
             model_id = self.request.GET.get('model_filter')
@@ -343,6 +434,10 @@ class ModelDetailView(DetailView):
             return self._post_copy(request)
         if 'train_submit' in request.POST:
             return self._post_train(request)
+        if 'change_ready_flag' in request.POST:
+            return self._post_change_ready_flag(request)
+        
+   
 
     def _post_copy(self, request: HttpRequest) -> HttpResponse:
         #validate        
@@ -423,6 +518,13 @@ class ModelDetailView(DetailView):
             return Result(True, "Training finished",
                           f"score before: {old_score}\nscore after: {new_score}\n{operation_text}").render_view()
 
+    def _post_change_ready_flag(self, request: HttpRequest) -> HttpResponse:
+        model: Model = self.get_object()
+        model.ready_for_prediction = not model.ready_for_prediction
+        model.save() 
+        return Result(True, f"Ready for prediction status changed to '{model.ready_for_prediction}'",
+                      link_address=model.get_absolute_url(),
+                      link_text="See model details").render_view()
 
 class TopicView(TemplateView):
     template_name = 'topic.html'
@@ -435,25 +537,24 @@ class TopicView(TemplateView):
                 group_ids = list(g.id for g in Group.objects.filter(name__icontains='iris'))
                 context['description_template'] = "topics/iris_description.html"
                 context['measurements_page'] = _get_measurements_page(group_ids, self.request)
-                context['models_page'] = _get_models_page(group_ids, self.request)
+                context['models_page'] = _get_models_page(group_ids, self.request, True)
 
             case 'salmon':
                 group_ids = list(g.id for g in Group.objects.filter(name__icontains='salmon'))
                 context['description_template'] = "topics/generic_description.html"
                 context['measurements_page'] = _get_measurements_page(group_ids, self.request)
-                context['models_page'] = _get_models_page(group_ids, self.request)
+                context['models_page'] = _get_models_page(group_ids, self.request, True)
 
             case 'vanilla':
                 group_ids = list(g.id for g in Group.objects.filter(name__icontains='vanilla'))
                 context['description_template'] = "topics/generic_description.html"
                 context['measurements_page'] = _get_measurements_page(group_ids, self.request)
-                context['models_page'] = _get_models_page(group_ids, self.request)
+                context['models_page'] = _get_models_page(group_ids, self.request, True)
 
             case _:
                 context['description_template'] = "topics/generic_description.html"
                 context['measurements_page'] = None
                 context['models_page'] = None
-
 
         return context
 

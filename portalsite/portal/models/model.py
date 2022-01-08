@@ -29,6 +29,9 @@ class Model(models.Model):
     data = models.TextField(help_text='model data (weights, parameters, coefficients, etc.), serialized to string')
 
     groups = models.ManyToManyField(Group)
+    
+    ready_for_prediction = models.BooleanField(default=False, 
+        help_text="whether this model is ready to be used for predictions")
 
     # type interface
     model_type = models.CharField(max_length=MODELTYPES.id_length, choices=MODELTYPES.choices)

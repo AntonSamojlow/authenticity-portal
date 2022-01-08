@@ -9,5 +9,7 @@ urlpatterns = [
     path('measurements', login_required(views.MeasurementsView.as_view()), name='measurements'),
     path('measurement/<int:pk>', login_required(views.MeasurementDetailView.as_view()), name='measurement-detail'),
     path('result', login_required(views.MeasurementDetailView.as_view()), name='result'),
-    path('topic/<topic>', login_required(views.TopicView.as_view()), name='topic')
+    path('topic/<topic>', login_required(views.TopicView.as_view()), name='topic'),
+    path('predict/<int:pk>', login_required(views.PredictView.as_view()), name='predict'),
+    path('measurementdownload/<int:pk>', login_required(views.measurementdownload), name='measurementdownload')
 ]

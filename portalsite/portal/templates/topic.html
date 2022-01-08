@@ -4,13 +4,14 @@
 <div>
     <div class="mb-5 mt-1">
         <h1>{{title}}</h1>
-        {% include description_template %}
-        <h3>Data overview</h3>
+        {% include description_template %}            
+    </div>
+    <div class="mb-5 mt-1">    
+        <h3>Data overview</h3>  
+        <h5>Models - ready for prediction</h5>
+        {% include "models-table.html" %}
         <h5>Measurements</h5>
         {% include "measurements-table.html" %}
-        <h5>Models</h5>
-        {% include "models-table.html" %}
-        <h3>Predict from file</h3>
     </div>
 </div>
 {% endblock %}
