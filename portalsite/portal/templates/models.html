@@ -19,7 +19,7 @@
                                     <table>
                                         {{ active_model.form }}
                                     </table>
-                                    <button class="btn btn-outline-primary" type="submit" name="new_simca_model_submit">
+                                    <button class="btn btn-outline-primary" type="submit" name="{{ active_model.submit_key }}">
                                         Create {{ active_model.name }}</button>
                                 </form>
                                 <div class="m-2">
@@ -44,7 +44,7 @@
                                     <table>
                                         {{ model.form }}
                                     </table>
-                                    <button class="btn btn-outline-primary" type="submit" name="new_simca_model_submit">
+                                    <button class="btn btn-outline-primary" type="submit" name="{{ active_model.submit_key }}">
                                         Create {{ model.name }}</button>
                                 </form>
                                 <div class="m-2">

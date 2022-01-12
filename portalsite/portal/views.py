@@ -342,13 +342,15 @@ class ModelsView(TemplateView):
         lr_model = {
             'form' : NewLinearRegssionModelForm(self.groups_choices),
             'description' : LINEARREGRESSIONMODEL.description,
-            'name' : "Linear Regression Model"
+            'name' : "Linear Regression Model",
+            'submit_key' : 'new_lreg_model_submit'
         }
 
         simca_model = {
             'form' : NewSimcaModelForm(SIMCAMODEL.LIMITTYPE_CHOICES, self.groups_choices),
             'description' : SIMCAMODEL.description,
-            'name' : "SIMCA model"
+            'name' : "SIMCA model",
+            'submit_key' : 'new_simca_model_submit'
         }
 
         context = {  

@@ -26,7 +26,7 @@ class Prediction(models.Model):
     model = models.ForeignKey('Model', on_delete=models.CASCADE)
     measurement = models.ForeignKey('Measurement', on_delete=models.CASCADE)
     time = models.DateTimeField(auto_now_add=True, help_text="time it was generated")
-
+    
     @property
     def result_truncated_text(self):
         text = str(self.result)
