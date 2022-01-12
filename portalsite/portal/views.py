@@ -40,6 +40,9 @@ if TYPE_CHECKING:
 def index(request: HttpRequest) -> HttpResponse:
     return render(request, 'index.html', context={})
 
+def info(request: HttpRequest) -> HttpResponse:
+    return render(request, 'info.html', context={})
+
 def measurementdownload(request: HttpRequest, pk: int) -> HttpResponse:
     measurement: Measurement = Measurement.objects.get(pk=pk)
     # measurement.data_handler

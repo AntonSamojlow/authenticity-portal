@@ -4,6 +4,7 @@ from . import views
 
 urlpatterns = [
     path('', views.index, name='index'),
+    path('info', views.info, name='info'),
     path('models', login_required(views.ModelsView.as_view()), name='models'),
     path('models/<int:pk>', login_required(views.ModelDetailView.as_view()), name='model-detail'),
     path('measurements', login_required(views.MeasurementsView.as_view()), name='measurements'),
