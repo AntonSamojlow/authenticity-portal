@@ -17,7 +17,7 @@ The portal is designed to accomodate two different work flows (and user types):
     - access details/information about the selected topics and the available models
     - request a prediction by feeding a data file to one of the hosted models  
 
-- The **data manager** or scientist curates the validated models. This involves 
+- The **data manager** or **scientist** curates the validated models. This involves 
     - upload of measurment data
     - generation of models
     - training of models on selæected measurements
@@ -47,6 +47,14 @@ and contains therefore i.p. the files
 - runtime.txt
 - Procfile
 
-Moreover, the target environment is expected to provide the variables 'DATABASE_URL', 'DJANGO_DEBUG' and 'DJANGO_SECRET_KEY'.
+Note that the target environment is expected to provide the variables 'DATABASE_URL', 'DJANGO_DEBUG' and 'DJANGO_SECRET_KEY'.
+And if required, a superuser should be created after intial deployment, see heroku and django docs for details.
 
-Any superuser should be created after intial deployment, see heroku and django docs for details.
+The database can be seeded via heroku CLI with the command
+```
+heroku run python manage.py loaddata portal/fixtures/initial_seed_data.json
+```
+This will create iris-example data with two models (trained on Setosa) as well as two users
+- 'generic_test_user', password 'GENER1C!' with only basic rights
+- 'scientist_test_user', password 'SC1ENCE!' with rights to all portal objects and selected administration privileges
+

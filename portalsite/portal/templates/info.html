@@ -11,12 +11,22 @@
         to a general audience</li>
     <li>presents the models within a specific topic (use case), providing additional information and context</li>
 </ul>
+<p>
+    You are welcome to use one of two pre-made users accounts to explore the functionality of this site: 
+    <ul>
+        <li>user 'generic_test_user', password 'GENER1C!', with only basic rights </li>
+        <li>user 'scientist_test_user', password 'SC1ENCE!', with rights to all portals and the and 
+            selected administration privileges</li>
+    </ul>
+</p>
+
+
 <h3>Usage description</h3>
 <p>
     The portal is designed to accomodate two different work flows (and user types):
 </p>
 <p>
-    The <b>general user</b> uses validated models to obtain information about their dataset, in particular:
+    <b>General users</b>can obtain information about their dataset from validated models, in particular:
 <ul>
     <li>a quantitative prediction, like the nutrient content of a sample</li>
     <li>a classification, like the authenticity of a sample (likelihood of class member ship)</li>
@@ -31,7 +41,7 @@
 
 </p>
 <p>
-    The <b>data manager</b> or scientist curates the validated models. This involves
+    The data manager or <b>scientist</b> curates the available validated models. This involves
 <ul>
     <li>upload of new measurment data: see <a href="{% url 'measurements' %}">measurement overview</a></li>
     <li>generation of new models: see <a href="{% url 'models' %}">model overview</a></li>
