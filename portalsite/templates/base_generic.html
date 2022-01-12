@@ -29,10 +29,15 @@
 			</a>
 			<nav class="nav col-sm-12 col-md-auto mb-2 justify-content-center mb-md-0">
 				<a href="{% url 'index' %}" class="nav-link px-2 link-secondary">Home</a>
-				<a class="nav-link px-2 link-secondary" href="{% url 'topic' topic='iris' %}">Iris</a>
-				<a class="nav-link px-2 link-secondary" href="{% url 'topic' topic='salmon' %}">Salmon</a>
-				<a class="nav-link px-2 link-secondary" href="{% url 'topic' topic='vanilla' %}">Vanilla</a>
-
+				<a class="nav-link dropdown-toggle-split" href="#" id="navbarDropdownData" role="button"
+					data-bs-toggle="dropdown" aria-expanded="false">
+					Topics
+				</a>
+				<ul class="dropdown-menu" aria-labelledby="navbarDropdownData">
+					<li><a class="dropdown-item" href="{% url 'topic' topic='iris' %}">Iris</a></li>
+					<li><a class="dropdown-item" href="{% url 'topic' topic='salmon' %}">Salmon</a></li>
+					<li><a class="dropdown-item" href="{% url 'topic' topic='vanilla' %}">Vanilla</a></li>
+				</ul>	
 				<a class="nav-link dropdown-toggle-split" href="#" id="navbarDropdownData" role="button"
 					data-bs-toggle="dropdown" aria-expanded="false">
 					Data
