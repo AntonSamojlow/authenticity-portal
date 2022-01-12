@@ -49,4 +49,4 @@ and contains therefore i.p. the files
 
 Moreover, the target environment is expected to provide the variables 'DATABASE_URL', 'DJANGO_DEBUG' and 'DJANGO_SECRET_KEY'.
 
-As usual, a superuser should be created after intial deployment, see heroku and django docs for details.
+Any superuser should be created after intial deployment, see heroku and django docs for details.

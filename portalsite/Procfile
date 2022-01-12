@@ -1,3 +1,2 @@
 release: python manage.py migrate 
-release: python manage.py loaddata portal/fixtures/initial_seed_data.json
 web: gunicorn portalsite.wsgi --log-file -
