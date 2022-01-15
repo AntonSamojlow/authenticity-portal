@@ -1,3 +1,4 @@
+"""A dummy model for testing and base examples"""
 # region imports
 # standard
 from typing import TYPE_CHECKING
@@ -13,6 +14,7 @@ if TYPE_CHECKING:
     from portal.models import Model, Measurement
 
 # endregion
+
 
 class TestModelType(ModelType):
     """This model type is a dummy implementation for development and testing:

@@ -1,22 +1,24 @@
+"""
+Custom serializsation tools to help expose, save and restore simca models as JSON text
+"""
 # region - imports
 # standard
-from dataclasses import dataclass
-import json
 
 # 3rd party
 import numpy as np
 
 # local
-from .simca import Simca, SimcaParameters, LimitType
-from .pca import PCA, PCAProjection
-from .distancelimits import DistanceLimits, LimitParameters, Limits
+from simca import Simca, SimcaParameters, LimitType
+from pca import PCA, PCAProjection
+from distancelimits import DistanceLimits, LimitParameters, Limits
 
 
 # type hints
 
 # endregion
 
-None_dict = { 'object_type' : 'None' }
+None_dict = {'object_type': 'None'}
+
 
 class CustomSerializer:
     """
@@ -24,20 +26,20 @@ class CustomSerializer:
     """
 
     dict_type_key = 'object_type'
-    
 
     def __init__(self, object_type: type, type_string: str = None) -> None:
         self.object_type = object_type
         self.type_string = type(object_type).__name__ if type_string is None else type_string
 
-    def init_dict(self, object) -> dict:
+    def init_dict(self, object_to_serialize) -> dict:
         """
         Returrns a dictionary with entry for key `CustomSerializer.dict_key` preset.
         Raises TypeError if the objects type is unexpected.
         """
-        if not type(object) is self.object_type:
-            raise TypeError(f"can not serialize object of type '{type(object)},' expected type {self.object_type}")
-        return {CustomSerializer.dict_type_key : self.type_string} 
+        if not type(object_to_serialize) is self.object_type:
+            raise TypeError(
+                f"can not serialize object of type '{type(object_to_serialize)},' expected type {self.object_type}")
+        return {CustomSerializer.dict_type_key: self.type_string}
 
     def validate_dict(self, json_dict) -> None:
         """
@@ -51,6 +53,7 @@ class CustomSerializer:
 
         return True
 
+
 class ArraySerializer(CustomSerializer):
     """
     Responsible for (de) serialization of numpy arrays from/to json-compatible dictionaries
@@ -59,13 +62,12 @@ class ArraySerializer(CustomSerializer):
     def __init__(self) -> None:
         super().__init__(np.ndarray, type_string='numpy.ndarray')
 
-
     def to_dict(self, array: np.ndarray) -> dict:
         if array is None:
             return None_dict
         json_dict = self.init_dict(array)
         json_dict.update({
-            'values' : array.tolist()
+            'values': array.tolist()
         })
         return json_dict
 
@@ -75,6 +77,7 @@ class ArraySerializer(CustomSerializer):
         self.validate_dict(json_dict)
         return np.asarray(json_dict['values'])
 
+
 class SimcaParametersSerializer(CustomSerializer):
     """
     Responsible for (de) serialization of numpy arrays from/to json-compatible dictionaries
@@ -83,13 +86,12 @@ class SimcaParametersSerializer(CustomSerializer):
     def __init__(self) -> None:
         super().__init__(SimcaParameters, type_string='simca_parameters')
 
-
     def to_dict(self, parameters: SimcaParameters) -> dict:
         json_dict = self.init_dict(parameters)
         json_dict.update({
-            'alpha' :  parameters.alpha,
-            'gamma' : parameters.gamma,
-            'n_comp' : parameters.n_comp,
+            'alpha':  parameters.alpha,
+            'gamma': parameters.gamma,
+            'n_comp': parameters.n_comp,
             'limit_type': parameters.limit_type.name,
             'scale': parameters.scale
         })
@@ -103,7 +105,8 @@ class SimcaParametersSerializer(CustomSerializer):
             int(json_dict['n_comp']),
             LimitType[json_dict['limit_type']],
             bool(json_dict['scale'])
-            )
+        )
+
 
 class PCASerializer(CustomSerializer):
     """
@@ -118,10 +121,10 @@ class PCASerializer(CustomSerializer):
     def to_dict(self, pca: PCA) -> dict:
         json_dict = self.init_dict(pca)
         json_dict.update({
-            'covariance' : self.arrayserializer.to_dict(pca.covariance),
-            'eigenvalues' : self.arrayserializer.to_dict(pca.eigenvalues),
-            'eigenvectors' : self.arrayserializer.to_dict(pca.eigenvectors),
-            'matrix' : self.arrayserializer.to_dict(pca.matrix),
+            'covariance': self.arrayserializer.to_dict(pca.covariance),
+            'eigenvalues': self.arrayserializer.to_dict(pca.eigenvalues),
+            'eigenvectors': self.arrayserializer.to_dict(pca.eigenvectors),
+            'matrix': self.arrayserializer.to_dict(pca.matrix),
             'bias': pca.bias
         })
         return json_dict
@@ -134,7 +137,8 @@ class PCASerializer(CustomSerializer):
             self.arrayserializer.from_dict(json_dict['eigenvalues']),
             self.arrayserializer.from_dict(json_dict['eigenvectors']),
             bool(json_dict['bias'])
-            ) 
+        )
+
 
 class PCAProjectionSerializer(CustomSerializer):
     """
@@ -151,12 +155,12 @@ class PCAProjectionSerializer(CustomSerializer):
         json_dict = self.init_dict(projection)
         json_dict.update({
             # we skip pcas here: we only intend to serialize simca models, which already serialize their own pca copy
-            'pca' :  "NOT SERIALIZED", 
-            'distances' : {
-                'Q' : self.arrayserializer.to_dict(projection.distances.Q),
-                'T2' : self.arrayserializer.to_dict(projection.distances.T2),
+            'pca':  "NOT SERIALIZED",
+            'distances': {
+                'Q': self.arrayserializer.to_dict(projection.distances.Q),
+                'T2': self.arrayserializer.to_dict(projection.distances.T2),
             },
-            'scores' :  self.arrayserializer.to_dict(projection.scores),
+            'scores':  self.arrayserializer.to_dict(projection.scores),
             'residuals': self.arrayserializer.to_dict(projection.residuals),
         })
         return json_dict
@@ -175,7 +179,8 @@ class PCAProjectionSerializer(CustomSerializer):
                 self.arrayserializer.from_dict(json_dict['distances']['T2']),
             )
         )
-    
+
+
 class LimitsSerializer(CustomSerializer):
     """
     Responsible for (de) serialization of limits from/to json-compatible dictionaries
@@ -188,13 +193,13 @@ class LimitsSerializer(CustomSerializer):
     def to_dict(self, limits: Limits) -> dict:
         json_dict = self.init_dict(limits)
         json_dict.update({
-            'dof' : self.arrayserializer.to_dict(limits.dof),
-            'mean' : self.arrayserializer.to_dict(limits.mean),
-            'outliers' : self.arrayserializer.to_dict(limits.outliers),
-            'extremes' : self.arrayserializer.to_dict(limits.extremes),
+            'dof': self.arrayserializer.to_dict(limits.dof),
+            'mean': self.arrayserializer.to_dict(limits.mean),
+            'outliers': self.arrayserializer.to_dict(limits.outliers),
+            'extremes': self.arrayserializer.to_dict(limits.extremes),
         })
         return json_dict
-    
+
     def from_dict(self, json_dict: dict) -> Limits:
         self.validate_dict(json_dict)
         return Limits(
@@ -203,6 +208,7 @@ class LimitsSerializer(CustomSerializer):
             self.arrayserializer.from_dict(json_dict['mean']),
             self.arrayserializer.from_dict(json_dict['dof'])
         )
+
 
 class DistanceLimitsSerializer(CustomSerializer):
     """
@@ -217,10 +223,10 @@ class DistanceLimitsSerializer(CustomSerializer):
     def to_dict(self, limits: DistanceLimits) -> dict:
         json_dict = self.init_dict(limits)
         json_dict.update({
-            'Q' : self.limitsserializer.to_dict(limits.Q),
-            'T2' : self.limitsserializer.to_dict(limits.T2),
+            'Q': self.limitsserializer.to_dict(limits.Q),
+            'T2': self.limitsserializer.to_dict(limits.T2),
             # we skip pcas here: we only intend to serialize simca models, which already serialize their own pca copy
-            'parameters' : "NOT SERIALIZED",
+            'parameters': "NOT SERIALIZED",
             'Q_params': {
                 'u0': self.arrayserializer.to_dict(limits.Q_params.u0),
                 'Nu': self.arrayserializer.to_dict(limits.Q_params.Nu),
@@ -233,22 +239,23 @@ class DistanceLimitsSerializer(CustomSerializer):
             }
         })
         return json_dict
-    
+
     def from_dict(self, json_dict: dict, parameters: SimcaParameters) -> DistanceLimits:
         self.validate_dict(json_dict)
         return DistanceLimits(parameters,
-            self.limitsserializer.from_dict(json_dict['Q']),
-            self.limitsserializer.from_dict(json_dict['T2']),
-            LimitParameters(
-                self.arrayserializer.from_dict(json_dict['Q_params']['u0']),
-                self.arrayserializer.from_dict(json_dict['Q_params']['Nu']),
-                int(json_dict['Q_params']['nobj'])
-            ),
-            LimitParameters(
-                self.arrayserializer.from_dict(json_dict['T2_params']['u0']),
-                self.arrayserializer.from_dict(json_dict['T2_params']['Nu']),
-                int(json_dict['T2_params']['nobj']),
-            ))
+                              self.limitsserializer.from_dict(json_dict['Q']),
+                              self.limitsserializer.from_dict(json_dict['T2']),
+                              LimitParameters(
+                                  self.arrayserializer.from_dict(json_dict['Q_params']['u0']),
+                                  self.arrayserializer.from_dict(json_dict['Q_params']['Nu']),
+                                  int(json_dict['Q_params']['nobj'])
+                              ),
+                              LimitParameters(
+                                  self.arrayserializer.from_dict(json_dict['T2_params']['u0']),
+                                  self.arrayserializer.from_dict(json_dict['T2_params']['Nu']),
+                                  int(json_dict['T2_params']['nobj']),
+                              ))
+
 
 class SimcaSerializer(CustomSerializer):
     """
@@ -260,21 +267,21 @@ class SimcaSerializer(CustomSerializer):
     arrayserializer = ArraySerializer()
     pcaprojectionserializer = PCAProjectionSerializer()
     distancelimitsserializer = DistanceLimitsSerializer()
-    
+
     def __init__(self) -> None:
         super().__init__(Simca, type_string='Simca')
 
     def to_dict(self, simca: Simca) -> dict:
         json_dict = self.init_dict(simca)
         json_dict.update({
-            'pca' : self.pcaserializer.to_dict(simca.pca),
-            'parameters' : self.parametersserializer.to_dict(simca.parameters),
-            'preprocessing_mean' : self.arrayserializer.to_dict(simca.preprocessing_mean),
-            'preprocessing_std' : self.arrayserializer.to_dict(simca.preprocessing_std),
-            'data' : self.arrayserializer.to_dict(simca.data),
-            'calibration_result' : self.pcaprojectionserializer.to_dict(simca.calibration_result),
-            'test_result' : self.pcaprojectionserializer.to_dict(simca.test_result),
-            'limit' : self.distancelimitsserializer.to_dict(simca.limits),
+            'pca': self.pcaserializer.to_dict(simca.pca),
+            'parameters': self.parametersserializer.to_dict(simca.parameters),
+            'preprocessing_mean': self.arrayserializer.to_dict(simca.preprocessing_mean),
+            'preprocessing_std': self.arrayserializer.to_dict(simca.preprocessing_std),
+            'data': self.arrayserializer.to_dict(simca.data),
+            'calibration_result': self.pcaprojectionserializer.to_dict(simca.calibration_result),
+            'test_result': self.pcaprojectionserializer.to_dict(simca.test_result),
+            'limit': self.distancelimitsserializer.to_dict(simca.limits),
         })
         return json_dict
 
@@ -292,4 +299,3 @@ class SimcaSerializer(CustomSerializer):
             self.distancelimitsserializer.from_dict(json_dict['limit'], parameters),
             parameters
         )
-  

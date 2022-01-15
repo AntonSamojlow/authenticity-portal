@@ -29,9 +29,9 @@ class Model(models.Model):
     data = models.TextField(help_text='model data (weights, parameters, coefficients, etc.), serialized to string')
 
     groups = models.ManyToManyField(Group)
-    
-    ready_for_prediction = models.BooleanField(default=False, 
-        help_text="whether this model is ready to be used for predictions")
+
+    ready_for_prediction = models.BooleanField(default=False,
+                                               help_text="whether this model is ready to be used for predictions")
 
     # type interface
     model_type = models.CharField(max_length=MODELTYPES.id_length, choices=MODELTYPES.choices)
@@ -67,14 +67,15 @@ class Model(models.Model):
     @property
     def groups_as_short_text(self) -> str:
         return self.groups_as_text(42)
+
     class Meta:
         ordering = ['time_created']
 
-    def groups_as_text(self, max_length : int = None) -> str:
+    def groups_as_text(self, max_length: int = None) -> str:
         """Returns a comma separated string of group names, truncated if specified."""
-        text = ", ".join([l.name for l in  self.groups.all()])
+        text = ", ".join([l.name for l in self.groups.all()])
         if max_length is not None and len(text) > max_length:
-            text = text[: max(1,max_length-3)] + "..."
+            text = text[: max(1, max_length-3)] + "..."
         return text
 
     def score(self, measurement: 'Measurement') -> Scoring:
@@ -82,17 +83,17 @@ class Model(models.Model):
         if not measurement.is_labelled:
             raise NotImplementedError("Can not score unlabelled measurements")
         return Scoring(
-            value = self.get_type.score(self, measurement),
-            model = self,
-            measurement = measurement)
+            value=self.get_type.score(self, measurement),
+            model=self,
+            measurement=measurement)
 
     def predict(self, measurement: 'Measurement') -> Prediction:
         """Returns a new prediction"""
         return Prediction(
-            result = self.get_type.predict(self, measurement),
-            score = self.get_type.score(self, measurement) if measurement.is_labelled else float('NaN'),
-            model = self,
-            measurement = measurement)
+            result=self.get_type.predict(self, measurement),
+            score=self.get_type.score(self, measurement) if measurement.is_labelled else float('NaN'),
+            model=self,
+            measurement=measurement)
 
     def is_compatible(self, measurement: 'Measurement') -> bool:
         """Returns true iff the measurement is a valid input (for this models prediction)"""

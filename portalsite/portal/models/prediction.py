@@ -21,12 +21,12 @@ if TYPE_CHECKING:
 class Prediction(models.Model):
     """Result of applying a model to a measurement"""
 
-    score = models.FloatField(null=True, blank= True)
+    score = models.FloatField(null=True, blank=True)
     result = models.TextField()
     model = models.ForeignKey('Model', on_delete=models.CASCADE)
     measurement = models.ForeignKey('Measurement', on_delete=models.CASCADE)
     time = models.DateTimeField(auto_now_add=True, help_text="time it was generated")
-    
+
     @property
     def result_truncated_text(self):
         text = str(self.result)

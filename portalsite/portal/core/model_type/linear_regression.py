@@ -1,3 +1,4 @@
+"""Linear regression model"""
 # region imports
 # standard
 from json import dumps, loads
@@ -15,6 +16,7 @@ if TYPE_CHECKING:
     from portal.models import Model, Measurement
 
 # endregion
+
 
 class LinearRegressionModel(ModelType):
     """The linear regression model is a least-squares fit of a real-valued linear function over the feature space"""
@@ -35,20 +37,20 @@ class LinearRegressionModel(ModelType):
     def description(self) -> str:
         """Description of the type, its uses, and  possbily refering to external docs"""
         return self.__doc__
-    
+
     def details_text(self, model: 'Model') -> str:
         """A formatted text describing the concrete data/paramters of the given model"""
         lreg = self.__load_model(model)
         return (
             f"Linear regressioin model for {len(lreg.coef_)} features.\n"
-            +f"Coefficients={lreg.coef_}\n"
-            +f"Intercept={lreg.intercept_}"
+            + f"Coefficients={lreg.coef_}\n"
+            + f"Intercept={lreg.intercept_}"
         )
 
     def compatible(self, model: 'Model', measurement: 'Measurement') -> bool:
         """Returns true iff the measurement is a valid (prediction) input for the model"""
         features = len(self.__load_model(model).coef_)
-        shape : tuple = measurement.model_input().shape
+        shape: tuple = measurement.model_input().shape
         if len(shape) != 2:
             return False
         if int(shape[1]) != features:
@@ -59,7 +61,7 @@ class LinearRegressionModel(ModelType):
         json_data: dict = loads(model.data)
         if ('object_type' not in json_data.keys()
             or 'coef_' not in json_data.keys()
-            or 'intercept_' not in json_data.keys()):
+                or 'intercept_' not in json_data.keys()):
             raise KeyError(self.id_ + " failed to load model (data lacking required keys)")
         if json_data['object_type'] != self.id_ + "-model_data":
             raise ValueError(self.id_ + " failed to load model (model data has wrong object_type)")
@@ -78,13 +80,13 @@ class LinearRegressionModel(ModelType):
 
     def score(self, model: 'Model', measurement: 'Measurement') -> float:
         """Returns a models score, evaluated against a _labelled_ measurement (throws/undefined if unlabelled)"""
-        model : LinearRegression = self.__load_model(model)
+        model: LinearRegression = self.__load_model(model)
         score = model.score(measurement.model_input(), measurement.model_target())
         return score
 
     def predict(self, model: 'Model', measurement: 'Measurement') -> np.ndarray:
         """Returns a models prediction of a measurement"""
-        model : LinearRegression = self.__load_model(model)
+        model: LinearRegression = self.__load_model(model)
         return model.predict(measurement.model_input())
 
     def train(self,

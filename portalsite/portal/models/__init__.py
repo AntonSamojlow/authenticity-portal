@@ -1,3 +1,7 @@
+"""
+Contains all DJANGO database models
+"""
+
 from .group import Group
 from .measurement import Measurement
 from .model import Model
