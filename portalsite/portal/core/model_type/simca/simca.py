@@ -11,8 +11,8 @@ from dataclasses import dataclass, field
 import numpy as np
 
 # local
-from pca import PCA, PCAProjection
-from distancelimits import LimitType, DistanceLimits
+from .pca import PCA, PCAProjection
+from .distancelimits import LimitType, DistanceLimits
 
 # type hints
 

@@ -3,6 +3,11 @@ This is a prototype of a web site/server that
 - serves selected 'prediction models'\* to a general audience
 - presents the models within a specific topic (use case), providing additional information and context
 
+It is named *authenticity-portal* to indicate one possible field of application: 
+        A platform where one can upload some (measurement) data of a food to verify/predict 
+        certain properties, like authenticity of the geographical organic. The prediction models 
+        are curated and validated by trusted institutions. 
+        
 (\*note that in my terminology, prediction models include classification)
 
 # Design description

@@ -8,9 +8,9 @@ Custom serializsation tools to help expose, save and restore simca models as JSO
 import numpy as np
 
 # local
-from simca import Simca, SimcaParameters, LimitType
-from pca import PCA, PCAProjection
-from distancelimits import DistanceLimits, LimitParameters, Limits
+from .simca import Simca, SimcaParameters, LimitType
+from .pca import PCA, PCAProjection
+from .distancelimits import DistanceLimits, LimitParameters, Limits
 
 
 # type hints

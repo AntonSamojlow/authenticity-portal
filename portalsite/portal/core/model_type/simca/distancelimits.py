@@ -13,7 +13,7 @@ import numpy as np
 from scipy import stats
 
 # local
-from helpers import nrows, bound
+from .helpers import nrows, bound
 
 # type hints
 if TYPE_CHECKING:

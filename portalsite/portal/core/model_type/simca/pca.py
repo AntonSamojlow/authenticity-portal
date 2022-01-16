@@ -7,7 +7,7 @@ from dataclasses import dataclass
 import numpy as np
 
 # local
-from helpers import ncols, nrows
+from .helpers import ncols, nrows
 
 # type hints
 
