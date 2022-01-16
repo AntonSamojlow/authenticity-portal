@@ -3,32 +3,26 @@
 {% block content %}
 <div>
     <div class="mb-5">
-        <h4>Upload new measurements</h4>
-        {% if perms.portal.add_measurement %}
+        <h1>Prediction file upload </h1>
+        <p>Please provide the measurement file that is to be predicted with the model '{{ model.name }}':</p>
         <div class="input-group p-3 d-flex justify-content-center m-3 border border-primary rounded">
             <form method="post" enctype="multipart/form-data">
                 {% csrf_token %}
                 <table>
                     {{ upload_form }}
                 </table>
-                <button class="btn btn-outline-primary" type="submit">Upload new data</button>
+                <button class="btn btn-outline-primary" type="predict"  style="display: inline;">Submit and predict</button>
             </form>
         </div>
-        {% else %}
-        <p>You don't have permission to add measurements.</p>
-        {% endif %}
     </div>
-    <div class="mb-5 mt-5">
-        <h4>Measurements</h4>
-        {% if perms.portal.view_measurement %}
+    <div class="mb-5">
+        <h4>Example of measurement files</h4>
+        <p>For an example of a comaptible measurement file, you can download one of these:</p>
         <form class="col-sm-12  m-2" method="get" enctype="multipart/form-data">
             <button class="btn btn-sm btn-outline-primary" type="submit">Filter by</button>
             {{ group_filter }}
         </form>
         {% include "measurements-table.html" %}
-        {% else %}
-        <p>You don't have permission to view measurements.</p>
-        {% endif %}
     </div>
 </div>
 {% endblock %}

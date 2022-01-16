@@ -1,5 +1,14 @@
 {% extends "base_generic.html" %}
 
+{% block top-banner %}
+<div class="col-sm-4 d-flex justify-content-center alert alert-info">
+    <div class="d-flex flex-column" role="alert">
+        <h6>Welcome to the authenticity portal, a proof-of-concept developed by <em>Anton Samojlow</em>.</h6>
+        <p>For a usage and content description, see the <a href="{% url 'info'%}">info section</a>.</p>
+    </div>
+</div>
+{% endblock %}
+
 {% block content %}
 <h1>Authenticity Portal</h1>
 <a href="{% url 'topic' topic='iris' %}">

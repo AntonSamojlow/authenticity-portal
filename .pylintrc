@@ -6,7 +6,7 @@ load-plugins=pylint_django
 max-line-length=120
 
 [MESSAGES CONTROL]
-disable=django-not-configured,missing-module-docstring
+disable=django-not-configured,missing-function-docstring
 
 [DESIGN]
 max-parents=7

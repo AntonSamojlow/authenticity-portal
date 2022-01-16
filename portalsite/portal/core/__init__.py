@@ -1,3 +1,8 @@
+"""
+Contains the 'core concepts' of the portal app
+"""
+
+
 from .data_handler import NumericCsvHandler
 from .model_type.test_model import TestModelType
 from .model_type.linear_regression import LinearRegressionModel

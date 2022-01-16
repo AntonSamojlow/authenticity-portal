@@ -2,7 +2,7 @@
 
 {% block content %}
 <div>
-    <div class="mb-5 mt-5">
+    <div class="mb-5">
         <h1>Model details</h1>
         {% if perms.portal.view_model %}
         <dl class="row mb-5">
@@ -16,13 +16,33 @@
             <dt class="col-sm-3">Created</dt>
             <dd class="col-sm-9">{{ object.time_changed }} (by user '{{ object.user_changed }}')</dd>
 
+
+            <dt class="col-sm-3">Ready for predictions</dt>
+            <div class="col-sm-9">
+                <dd >{{ object.ready_for_prediction }}
+                    {% if perms.portal.change_model %}
+                    <form method="post" enctype="multipart/form-data" style="display: inline;">
+                        {% csrf_token %}
+                        <button class="btn btn-sm btn-outline-warning" type="submit" name="change_ready_flag">Change</button>
+                    </form>
+                    {% endif %}
+                </dd>
+            </div>
+         
             <dt class="col-sm-3">Details</dt>
             <dd class="col-sm-9">
                 <pre>{{ object.details_text}}</pre>
             </dd>
         </dl>
-        <div class="row mb-5 mt-5">
-            <h3 class="col-sm-12">Copy the model</h3>
+        <h3>Actions</h3>      
+        {% if model.ready_for_prediction %}  
+        <div class="row mb-5">
+            <h4 class="col-sm-12">Generate a prediction</h4>
+            <a href="{% url 'predict' pk=model.id%} " class="btn btn-outline-primary">Go to file upload</a>
+        </div>
+        {% endif %}
+        <div class="row mb-5">
+            <h4 class="col-sm-12">Copy the model</h4>
             {% if perms.portal.add_model %}
             <form method="post" enctype="multipart/form-data">
                 {% csrf_token %}
@@ -35,16 +55,16 @@
             <p>You don't have permission to add models.</p>
             {% endif %}
         </div>
-        <div class="row mb-5 mt-5">
-            <h3 class="col-sm-12">Train the model</h3>
+        <div class="row mb-5">
+            <h4 class="col-sm-12">Train the model</h4>
             {% if perms.portal.add_model or perms.portal.change_model %}
-            <form class="col-sm-12" method="get" enctype="multipart/form-data">
-                <button class="btn btn-outline-primary" type="submit">Filter by</button>
+            <form class="col-sm-12  m-2" method="get" enctype="multipart/form-data">
+                <button class="btn btn-sm btn-outline-primary" type="submit">Filter by</button>
                 {{ group_filter }}
             </form>
             <form method="post" enctype="multipart/form-data">
                 {% csrf_token %}
-                    <table>
+                <table>
                     {{ train_form }}
                 </table>
                 <button class="btn btn-outline-primary" type="submit" name="train_submit">Start training...</button>

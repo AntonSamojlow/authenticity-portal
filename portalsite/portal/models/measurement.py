@@ -16,11 +16,12 @@ from .source import Source
 from .group import Group
 
 # type hints
-if TYPE_CHECKING:    
+if TYPE_CHECKING:
     from core.dataclasses import ValidationResult
     from core.data_handler import DataHandler
 
 # endregion
+
 
 class Measurement(models.Model):
     """Represents a measurement"""
@@ -68,8 +69,8 @@ class Measurement(models.Model):
     @property
     def is_labelled(self) -> bool:
         return not self.model_target is None
-    
-    # this is a not very elegant short cut - the langth parameter should really be controlled in the view
+
+    # this is a not very elegant short cut - the length parameter should really be controlled in the view
     @property
     def groups_as_short_text(self) -> str:
         return self.groups_as_text(42)
@@ -84,11 +85,11 @@ class Measurement(models.Model):
         """Returns the url to display the object."""
         return reverse('measurement-detail', args=[str(self.id)])
 
-    def groups_as_text(self, max_length : int = None) -> str:
+    def groups_as_text(self, max_length: int = None) -> str:
         """Returns a comma separated string of group names, truncated if specified."""
-        text = ", ".join([l.name for l in  self.groups.all()])
+        text = ", ".join([l.name for l in self.groups.all()])
         if max_length is not None and len(text) > max_length:
-            text = text[: max(1,max_length-3)] + "..."
+            text = text[: max(1, max_length-3)] + "..."
         return text
 
     # shortcuts via data handler

@@ -1,0 +1,104 @@
+{% extends "base_generic.html" %}
+
+{% block content %}
+<div class="col mt-1">
+
+    <h1>About this portal</h1>
+    <p>This is a prototype of a web site/server that</p>
+    <ul>
+        <li>serves selected <span style="color:royalblue" data-bs-placement="top"
+                title="note that in my terminology, prediction models include classification">prediction models</span>
+            to a general audience</li>
+        <li>presents the models within a specific topic (use case), providing additional information and context</li>
+    </ul>
+    <p>
+        It is named <i>authenticity-portal</i> to indicate one possible field of application: 
+        A platform where one can upload some (measurement) data of a food to verify/predict 
+        certain properties, like authenticity of the geographical organic. The prediction models 
+        are curated and validated by trusted institutions. 
+    </p>
+
+    <p>
+        You are welcome to use one of two pre-made users accounts to explore the functionality of this site:
+    <ul>
+        <li>user 'generic_test_user', password 'GENER1C!', with only basic rights </li>
+        <li>user 'scientist_test_user', password 'SC1ENCE!', with rights to all portals and the and
+            selected administration privileges</li>
+    </ul>
+    </p>
+
+
+    <h3>Usage description</h3>
+    <p>
+        The portal is designed to accomodate two different work flows (and user types):
+    </p>
+    <p>
+        <b>General users</b>can obtain information about their dataset from validated models, in particular:
+    <ul>
+        <li>a quantitative prediction, like the nutrient content of a sample</li>
+        <li>a classification, like the authenticity of a sample (likelihood of class member ship)</li>
+    </ul>
+    <p>
+        This user typically interactes by accessing a specific topic section,
+        over the <a href="{% url 'index' %}">entry page (home)</a> or by directly accessing the relevant topic,
+        like the <a href="{% url 'topic' topic='iris' %}">iris section</a>. Here, selected models are listed and
+        available
+        to use for a prediction via the 'Use for a prediction button' in the 'Actions' column. This leads to a form
+        where the user may submit his dataset.
+    </p>
+
+    </p>
+    <p>
+        The data manager or <b>scientist</b> curates the available validated models. This involves
+    <ul>
+        <li>upload of new measurment data: see <a href="{% url 'measurements' %}">measurement overview</a></li>
+        <li>generation of new models: see <a href="{% url 'models' %}">model overview</a></li>
+        <li>training of models: select a specific model from the model overview and choose from compativle
+            measruements to train on
+        </li>
+        <li>declaring a model as valid for use by general users: having a specific model select selæected
+            its <i>'Ready for predictions'</i> status can be changed</li>
+    </ul>
+    <p>
+        This user typically has advanced access to the site and also operates in the data overview sections
+        for all <a href="{% url 'models' %}">models</a> and <a href="{% url 'measurements' %}">measurements</a>.
+        In contrast, the topic pages only present a subset, since models and measurements each have a group tag
+        used to filter (the iris section for example shows only objects belonging to
+        at least one group with 'iris' in its name ).
+
+        Moreover, selected users have staff privileges, which enable have full control over data tables behind
+        this site via djangos <a href="{% url 'admin:index' %}">Admin</a> portal.
+    </p>
+
+    <h3>Topics</h3>
+    <p>
+        Three topics are presented: Iris, Salmon and Vanilla. The first is built around the common iris set. The other
+        two are (currently) just dummy pages. Maybe you can fill them with meaningful data and models ;) ?
+    </p>
+
+    <h3>Models</h3>
+    <p>
+        Currently, two model types are implemented: <b>Linear regression</b> as a simple example of a model capable of
+        <i>quantitative</i> predictions. And <b>SIMCA</b> as an example of a classification model (predicting the
+        likelihood of class memebership). The latter may not be well-known in all fields - it was ported by me to python
+        from the <a href="https://mdatools.com/docs/simca.html">R package 'mdatools'</a>
+        for use in this portal, see also <a href="https://doi.org/10.1002/cem.2506">this reference</a>.
+    </p>
+    <p>
+        More model types can be easily added in python.
+        For other languages, additional work (or a different platform than heroku) might be required.
+    </p>
+</div>
+<div class="col mt-3">
+    <hr>
+    <p>
+        <i>
+            This site was developed by: Anton Samojlow, <a href="mailto:anton.samojloe@web.com">email me</a>
+            for questions or comments.
+            Code and deployment instructions are available
+            on <a href="https://github.com/AntonSamojlow/authenticity-portal/">my github page</a>.
+        </i>
+    </p>
+</div>
+
+{% endblock %}

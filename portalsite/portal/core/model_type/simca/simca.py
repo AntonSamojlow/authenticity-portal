@@ -1,4 +1,8 @@
+"""
+Implementation of a SIMCA model, gathering the core code in the 'Simca' class.
 
+This is a port of selected concepts from the R package 'mdatools' - https://mdatools.com/docs/simca.html
+"""
 # region - imports
 # standard
 from dataclasses import dataclass, field
@@ -14,6 +18,7 @@ from .distancelimits import LimitType, DistanceLimits
 
 # endregion
 
+
 @dataclass(frozen=True)
 class SimcaParameters:
     alpha: int
@@ -25,6 +30,8 @@ class SimcaParameters:
     Whether to standardize before performing the PCA.
     (Equivalent to decomposing the correlation instead of the covariance matrix).
     """
+
+
 @dataclass
 class Simca:
     data: np.ndarray
@@ -38,31 +45,33 @@ class Simca:
     _parameters: SimcaParameters = field(init=False, repr=False)
 
     @staticmethod
-    def generate(one_class_data: np.ndarray, parameters: SimcaParameters, 
-        test_matrix: np.ndarray = None) -> 'Simca':
-    
+    def generate(one_class_data: np.ndarray, parameters: SimcaParameters,
+                 test_matrix: np.ndarray = None) -> 'Simca':
+
         # store unprocessed data
         data = one_class_data.astype(float)
 
         # compute and store preprocessing parameters
         preprocessing_mean = np.mean(data, 0)
-        preprocessing_std = np.std(data, 0, ddof = 1) if parameters.scale else None
-        
+        preprocessing_std = np.std(data, 0, ddof=1) if parameters.scale else None
+
         # intialize fields that are required to generate the subsequent fields
-        simca = Simca(data, 
-            preprocessing_mean, 
-            preprocessing_std, 
-            None, 
-            None, 
-            None,
-            None,
-            parameters)
+        simca = Simca(data,
+                      preprocessing_mean,
+                      preprocessing_std,
+                      None,
+                      None,
+                      None,
+                      None,
+                      parameters)
         simca.pca = PCA.generate(simca._preprocess(data))
         simca.recalibrate(parameters)
-   
+
+        # pylint: disable=fixme
         # TODO: test-prediction, (cross)-validation?
         simca.test_result = simca.pca.project(test_matrix, simca.parameters.n_comp) if test_matrix else None
         return simca
+
     @property
     def parameters(self) -> SimcaParameters:
         return self._parameters
@@ -72,9 +81,9 @@ class Simca:
         alpha = float(max(0.0, min(parameters.alpha, 1.0)))
         gamma = float(max(0.0, min(parameters.gamma, 1.0)))
         # note that this might fail if data has not been set yet:
-        n_comp = int(max(0, min(parameters.n_comp, 
-            self.data.shape[0], 
-            self.data.shape[1])))
+        n_comp = int(max(0, min(parameters.n_comp,
+                                self.data.shape[0],
+                                self.data.shape[1])))
         if not isinstance(parameters.limit_type, LimitType):
             raise TypeError("limit_type parameter is not recognized")
         return SimcaParameters(alpha, gamma, n_comp, parameters.limit_type, parameters.scale)
@@ -85,7 +94,6 @@ class Simca:
             raise ValueError("changing the scale parameter is not possible")
         self._parameters = self._cleaned_parameters(new_value)
 
-    
     def recalibrate(self, new_parameters: SimcaParameters):
         """
         Adjust the model limits to the provided new parameters and sets the calibration data.
@@ -103,20 +111,20 @@ class Simca:
         Computes probabilities for the matrix data (rows) to belong to same class as the calibration data,
         based on its orthogonal and score distances and for *all* computed component choices.
 
-        Returns: Matrix (m x n), where m = rowcount of input matrix, n = `self.parameters.n_comp`  
+        Returns: Matrix (m x n), where m = rowcount of input matrix, n = `self.parameters.n_comp`
         """
         projection = self.pca.project(self._preprocess(matrix), self.parameters.n_comp)
         probabilities = self.limits.get_probabilities(projection)
         return probabilities
-    
+
     def predict(self, matrix: np.ndarray, comp_count: int = 0) -> np.ndarray:
         """
         Computes probabilities for the matrix data (rows) to belong to same class as the calibration data,
         based on its orthogonal and score distances.
 
         Arguments:
-            - comp_nr: The desired principal component count. 
-            The default of 0 is interpreted as all (maximal nr of) components for which the pca was calculated.
+            - comp_nr: The desired principal component count.
+        The default of 0 is interpreted as all (maximal nr of) components for which the pca was calculated.
         """
         if (comp_count < 0 or comp_count > self.parameters.n_comp):
             raise ValueError("chosen comp_nr is invalid or incompatible with the model")
@@ -130,7 +138,7 @@ class Simca:
         if self.parameters.scale:
             preprocessed /= self.preprocessing_std
         return preprocessed
-            
+
     def score(self, matrix: np.ndarray, target_values: np.ndarray, components: int = None) -> float:
         """
         Predicts the matrix and returns the score:= 1 - average(target - predicted)
@@ -138,17 +146,14 @@ class Simca:
         Arguments:
             - matrix (ndarray): Data matrix to predict
             - matrix (ndarray): Vector of target values to predict
-            - components (int): Number of components to be used for the prediction. 
+            - components (int): Number of components to be used for the prediction.
             If set to None, the value is read from simca parameters.
         """
         if components is None:
             components = self.parameters.n_comp
-        
+
         if (components < 0 or components > self.parameters.n_comp):
             raise ValueError("chosen comp_nr is invalid or incompatible with the model")
-        
+
         predictions = self.predict(matrix, components)
         return float(1.0 - np.mean(np.abs(target_values - predictions)))
-
-
-   

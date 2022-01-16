@@ -2,8 +2,8 @@
 
 {% block content %}
 <div>
-    <div class="mb-5 mt-5">
-        <h1>Measurement</h1>
+    <div class="mb-5">
+        <h1>Measurement details</h1>
         {% if perms.portal.view_measurement %}
         <dl class="row mb-5">
             <dt class="col-sm-3">Name</dt>
@@ -31,11 +31,12 @@
             <dd class="col-sm-9">
                 <pre>{{ object.notes }}</pre>
             </dd>
+            <a href="{% url 'measurementdownload' pk=object.id%} " class="btn btn-sm btn-outline-info">Download</a>
         </dl>
         <div class="row mb-5 mt-5">
             <h3 class="col-sm-12">Predictions</h3>
-            <form class="col-sm-12" method="get" enctype="multipart/form-data">
-                <button class="btn btn-outline-primary" type="submit">Filter by</button>
+            <form class="col-sm-12 m-2" method="get" enctype="multipart/form-data">
+                <button class="btn btn-sm btn-outline-primary" type="submit">Filter by</button>
                 {{ model_filter }}
             </form>
             <table class="table table-sm col-sm-12">
