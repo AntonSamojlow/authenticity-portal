@@ -595,19 +595,19 @@ class TopicView(TemplateView):
                 context['description_template'] = "topics/iris_description.html"
                 context['measurements_page'] = _get_measurements_page(group_ids, self.request)
                 context['models_page'] = _get_models_page(group_ids, self.request, True)
-
+                context['image_src'] = "images/iris.jpg"
             case 'salmon':
                 group_ids = list(g.id for g in Group.objects.filter(name__icontains='salmon'))
                 context['description_template'] = "topics/generic_description.html"
                 context['measurements_page'] = _get_measurements_page(group_ids, self.request)
                 context['models_page'] = _get_models_page(group_ids, self.request, True)
-
+                context['image_src'] = "images/salmon.jpg"
             case 'vanilla':
                 group_ids = list(g.id for g in Group.objects.filter(name__icontains='vanilla'))
                 context['description_template'] = "topics/generic_description.html"
                 context['measurements_page'] = _get_measurements_page(group_ids, self.request)
                 context['models_page'] = _get_models_page(group_ids, self.request, True)
-
+                context['image_src'] = "images/vanilla.jpg"
             case _:
                 context['description_template'] = "topics/generic_description.html"
                 context['measurements_page'] = None

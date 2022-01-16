@@ -6,6 +6,12 @@
         <h1>{{title}}</h1>
         {% include description_template %}            
     </div>
+    {% if image_src %}
+    <div class="m-0">
+        {% load static %}
+        <img class="img-fluid"  src="{% static image_src %}">
+    </div>
+    {% endif %}
     <div class="mb-5 mt-1">    
         <h3>Data overview</h3>  
         <h5>Models - ready for prediction</h5>
