@@ -15,18 +15,24 @@
     <div class="col mt-5 btn btn-outline-primary rounded">
         <h3>Iris</h3>
         <p>Example with the famous iris dataset</p>
+        {% load static %}
+        <img class="img-fluid img-thumbnail" src="{% static 'images/iris.jpg' %}">
     </div>
 </a>
 <a href="{% url 'topic' topic='salmon' %}">
     <div class="col mt-5 btn btn-outline-primary rounded">
         <h3>Salmon</h3>
         <p>A delicous fish, often bred in captivity</p>
+        {% load static %}
+        <img class="img-fluid img-thumbnail" src="{% static 'images/salmon.jpg' %}">
     </div>
 </a>
 <a href="{% url 'topic' topic='vanilla' %}">
     <div class="col mt-5 btn btn-outline-primary rounded">
         <h3>Vanilla</h3>
         <p>A common spice</p>
+        {% load static %}
+        <img class="img-fluid img-thumbnail" src="{% static 'images/vanilla.jpg' %}">
     </div>
 </a>
 {% endblock %}
