@@ -1,5 +1,5 @@
 # authenticity-portal
-This is a prototype of a web site/server that 
+This is a prototype of a web site/server (currently hosted under https://authenticity-portal.herokuapp.com/) which 
 - serves selected 'prediction models'\* to a general audience
 - presents the models within a specific topic (use case), providing additional information and context
 
